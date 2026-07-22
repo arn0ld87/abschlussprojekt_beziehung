@@ -1,7 +1,7 @@
 # Sitzplan — Produkt- und Architekturdesign
 
 **Stand:** 22.07.2026  
-**Status:** vom Auftraggeber als Design bestätigt; Freigabe der schriftlichen Spezifikation steht aus  
+**Status:** schriftlich freigegebene und bestätigte Spezifikation
 **Ziel-Repository:** `arn0ld87/abschlussprojekt_beziehung`, derzeit öffentlich; vor einer Nutzung mit echten Daten auf privat umzustellen  
 **Ziel:** selbst gehostete Single-User-PWA zum grafischen Planen, Speichern, Wiederherstellen und KI-gestützten Optimieren von Sitzordnungen
 

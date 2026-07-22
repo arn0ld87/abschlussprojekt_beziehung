@@ -132,7 +132,7 @@ echo 'docs-check: ok'
 
 - [ ] **Step 2: Führe den Check aus und bestätige den erwarteten Fehler**
 
-Run: `bash scripts/check-docs.sh`  
+Run: `bash scripts/check-docs.sh`
 Expected: exit `1`, first missing file is `README.md`.
 
 - [ ] **Step 3: Erstelle README, STATUS, ROADMAP und CHANGELOG**
@@ -167,8 +167,8 @@ Under `Dokumentationshierarchie`, include the exact line:
 ```markdown
 # Projektstatus
 
-**Stand:** 22.07.2026  
-**Phase:** M0 — Foundation  
+**Stand:** 22.07.2026
+**Phase:** M0 — Foundation
 **Produktcode:** noch nicht begonnen
 
 ## Verifiziert vorhanden
@@ -275,7 +275,7 @@ done
 
 - [ ] **Step 2: Führe den ADR-Check aus**
 
-Run: `bash scripts/check-docs.sh`  
+Run: `bash scripts/check-docs.sh`
 Expected: exit `1` with `missing ADR 01` or the first still-missing global document.
 
 - [ ] **Step 3: Schreibe das kanonische Vokabular**
@@ -308,7 +308,7 @@ Every ADR uses:
 ```markdown
 # ADR-0001: Next.js als Full-Stack-Anwendung
 
-**Status:** Accepted  
+**Status:** Accepted
 **Date:** 2026-07-22
 
 ## Context
@@ -924,7 +924,7 @@ Do not close or assign the parent issues during creation. Apply `ready-for-agent
 
 - [ ] **Step 2: Verify the milestone frontier**
 
-Run:
+In Codex Work Mode, query the repository's open issues through the connected GitHub app and verify titles and blocker links. In a local Claude Code checkout with authenticated GitHub CLI, run:
 
 ```bash
 gh issue list --repo arn0ld87/abschlussprojekt_beziehung --state open --limit 100

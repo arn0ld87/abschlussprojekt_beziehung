@@ -1,0 +1,61 @@
+name: Feature request
+description: Propose one small, testable product slice.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Beschreibe nur Test- oder Fantasiedaten. Keine Zugangsdaten, Provider-Schlüssel oder echten Schülerdaten eintragen.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Welches konkrete Problem der Lehrkraft oder Klasse löst diese Änderung?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Sichtbares Ergebnis
+      description: Was kann eine Person nach der Änderung konkret sehen oder tun?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Akzeptanzkriterien
+      description: Liste überprüfbare Kriterien für diese vertikale Scheibe auf.
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: blocked-by
+    attributes:
+      label: Blockiert durch
+      description: Verlinke Abhängigkeiten oder schreibe „Keine“.
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Nicht im Umfang
+      description: Was gehört ausdrücklich nicht zu diesem Issue?
+    validations:
+      required: true
+  - type: textarea
+    id: test-seam
+    attributes:
+      label: Test-Schnittstelle
+      description: Wo wird das erwartete Verhalten zuerst als RED-Test nachgewiesen?
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Sicherheitscheck
+      options:
+        - label: Ich verwende ausschließlich Test- oder Fantasiedaten.
+          required: true
+        - label: Ich habe keine Secrets, Schlüssel oder lokale Zugangsdaten eingefügt.
+          required: true
