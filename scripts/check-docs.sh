@@ -158,7 +158,9 @@ for number in $(seq 1 10); do
       ;;
   esac
   ptr="${ptr_files[0]}"
-  refs=$(grep -oE "docs/decisions/${n}-[A-Za-z0-9._-]+\\.md" "$ptr" || true)
+  dests=$(grep -oE '\]\([^)]+\)' "$ptr" | sed -E 's/^\]\(//; s/\)$//' || true)
+  dests=$(printf '%s\n' "$dests" | sed -E "s#^\\.\\./\\.\\./decisions/#docs/decisions/#")
+  refs=$(printf '%s\n' "$dests" | grep -E "^docs/decisions/${n}-[A-Za-z0-9._-]+\\.md\$" || true)
   test -n "$refs" || {
     echo "decision pointer $ptr does not reference an ADR file" >&2
     exit 1
@@ -173,6 +175,19 @@ for number in $(seq 1 10); do
     exit 1
   }
 done
+
+ptr_dir="$context_dir/decisions"
+shopt -s nullglob
+all_ptr_files=("$ptr_dir"/*)
+shopt -u nullglob
+regular_count=0
+for f in "${all_ptr_files[@]}"; do
+  [ -f "$f" ] && regular_count=$((regular_count + 1))
+done
+test "$regular_count" -eq 10 || {
+  echo "expected exactly 10 decision pointer files in $ptr_dir, found $regular_count" >&2
+  exit 1
+}
 
 # TODO: redact-required validation
 # This gate does not yet parse service YAML definitions. When a service kind
