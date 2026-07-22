@@ -2,7 +2,7 @@
 
 **Stand:** 22.07.2026  
 **Status:** vom Auftraggeber als Design bestätigt; Freigabe der schriftlichen Spezifikation steht aus  
-**Ziel-Repository:** `arn0ld87/sitzplan`, privat  
+**Ziel-Repository:** `arn0ld87/abschlussprojekt_beziehung`, derzeit öffentlich; vor einer Nutzung mit echten Daten auf privat umzustellen  
 **Ziel:** selbst gehostete Single-User-PWA zum grafischen Planen, Speichern, Wiederherstellen und KI-gestützten Optimieren von Sitzordnungen
 
 ## 1. Problem
@@ -310,4 +310,3 @@ Der MVP ist freigabefähig, wenn:
 8. PDF und PNG die gewählte Blickrichtung korrekt darstellen;
 9. Backup und Restore in einem automatisierten Smoke-Test funktionieren;
 10. Installation und Betrieb anhand der Dokumentation auf einem leeren System reproduzierbar sind.
-
