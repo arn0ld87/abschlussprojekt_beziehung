@@ -9,3 +9,9 @@
 
 # Superpowers (Plugin-Cache, regenerierbar)
 .superpowers/
+
+# Node / Next.js (lokal, regenerierbar)
+node_modules/
+.next/
+out/
+*.tsbuildinfo
