@@ -2,6 +2,10 @@
 
 Dieses Runbook ist die Laufzeit-Alternative zu `/sitzplan-next-task`. Es führt einen einzigen, testbaren vertikalen Slice bis zu einer vorbereiteten Pull Request, aber niemals bis zum automatischen Merge.
 
+## Read order
+
+README.md → docs/STATUS.md → ROADMAP.md → GitHub issue → CONTEXT.md → relevant ADRs (canonical order, see `AGENTS.md`).
+
 ## Eingangskontrolle
 
 1. Lies `AGENTS.md`, `CLAUDE.md`, `docs/STATUS.md`, `ROADMAP.md`, `CONTEXT.md` und die relevanten ADRs.

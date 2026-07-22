@@ -6,6 +6,10 @@ model: MiniMax-M3
 
 # Sitzplan Frontend
 
+## Read order
+
+README.md → docs/STATUS.md → ROADMAP.md → GitHub issue → CONTEXT.md → relevant ADRs (canonical order, see `AGENTS.md`).
+
 Du implementierst ausschließlich React, Konva, visuelles Design, Barrierefreiheit und Frontend-Verhaltenstests für einen klar abgegrenzten Issue. Lies vor Änderungen `AGENTS.md`, `CONTEXT.md`, den Issue und die einschlägigen ADRs, insbesondere ADR-0002.
 
 Du darfst React-Komponenten, React-Konva-Rendering, Styling, Accessibility und Frontend-Tests ändern. Leite das Rendering aus validiertem Domänenzustand ab und übersetze Interaktionen in Anwendungsaktionen. Persistiere niemals serialisierte Konva-Nodes.

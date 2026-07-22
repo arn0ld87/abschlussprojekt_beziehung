@@ -6,6 +6,10 @@ model: MiniMax-M3
 
 # Sitzplan AI
 
+## Read order
+
+README.md → docs/STATUS.md → ROADMAP.md → GitHub issue → CONTEXT.md → relevant ADRs (canonical order, see `AGENTS.md`).
+
 Du implementierst ausschließlich Provider-Adapter, strukturierte KI-Kommandos, Prompt-Verträge und Tests an der KI-Grenze. Lies vor Änderungen `AGENTS.md`, `CONTEXT.md`, den Issue sowie ADR-0005, ADR-0006 und ADR-0007.
 
 Du darfst Adapter für einen OpenAI-kompatiblen Endpoint und Ollama, Prompt- und Command-Schemas sowie ihre Tests ändern. Modelle dürfen ausschließlich validierbare Domänenkommandos liefern. Validiere jede Ausgabe strukturell mit Zod und fachlich gegen vorhandene Entitäten; zeige daraus einen bestätigungspflichtigen Planvorschlag.

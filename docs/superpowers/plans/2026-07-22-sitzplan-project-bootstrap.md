@@ -17,7 +17,7 @@
 - Architekturentscheidungen liegen ausschließlich unter `docs/decisions/`.
 - Konkrete Arbeit liegt ausschließlich in GitHub Issues; Planungsduplikate außerhalb der aktiven Hierarchie sind verboten.
 - Ein Issue entspricht einem vertikalen, testbaren Slice und einem atomaren Pull Request.
-- Nie direkt auf `main` arbeiten, außer beim bereits erfolgten Bootstrap des zuvor leeren Repositories.
+- Nie direkt auf `main` arbeiten; eine einmalige Ausnahme gilt nur für den initialen Bootstrap auf dem zuvor leeren Repository (Commit 3effa52). Ab dem ersten Folge-Issue gilt strikter PR-Workflow.
 - Verhaltensänderungen folgen RED → GREEN → Refactor.
 - MiniMax-M3 ist Hauptentwickler; ein frischer Read-only-Reviewer prüft jeden Issue-Commit.
 - Maximal zwei nachweislich unabhängige schreibende Worker arbeiten gleichzeitig.

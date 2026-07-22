@@ -2,6 +2,10 @@
 
 Führe einen reproduzierbaren Workflow für **genau ein** GitHub-Issue aus. Dieses Command übernimmt keine Implementierung mehrerer Tickets und merged niemals automatisch.
 
+## Read order
+
+README.md → docs/STATUS.md → ROADMAP.md → GitHub issue → CONTEXT.md → relevant ADRs (canonical order, see `AGENTS.md`).
+
 ## Vorbedingung und Lese-Reihenfolge
 
 1. Lies `AGENTS.md`, `CLAUDE.md`, `docs/STATUS.md`, `ROADMAP.md`, `CONTEXT.md` und die für die Frontier relevanten ADRs.

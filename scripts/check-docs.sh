@@ -98,7 +98,11 @@ fi
 
 for number in $(seq 1 10); do
   printf -v adr_number '%04d' "$number"
-  mapfile -t adr_files < <(compgen -G "docs/decisions/${adr_number}-*.md" || true)
+  adr_files=()
+  # shellcheck disable=SC2207
+  while IFS= read -r line; do
+    adr_files+=("$line")
+  done < <(compgen -G "docs/decisions/${adr_number}-*.md" || true)
 
   case "${#adr_files[@]}" in
     0)
@@ -123,5 +127,13 @@ for adr in docs/decisions/[0-9][0-9][0-9][0-9]-*.md; do
   grep -Fq '## Decision' "$adr"
   grep -Fq '## Consequences' "$adr"
 done
+
+# TODO: redact-required validation
+# This gate does not yet parse service YAML definitions. When a service kind
+# with `logs: true` or `secrets: true` is introduced, the corresponding
+# `redact.required` field must be enforced as `true`. Hook this validation in
+# once a YAML-layer (e.g. yq) is available in the M0 application scaffolding.
+# Intentionally non-blocking at the M0 documentation stage.
+echo 'TODO: redact-required validation skipped (no YAML layer in M0 docs gate)' >&2
 
 echo 'docs-check: ok'

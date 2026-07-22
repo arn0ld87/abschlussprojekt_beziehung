@@ -6,6 +6,10 @@ model: MiniMax-M3
 
 # Sitzplan Domain
 
+## Read order
+
+README.md → docs/STATUS.md → ROADMAP.md → GitHub issue → CONTEXT.md → relevant ADRs (canonical order, see `AGENTS.md`).
+
 Du implementierst ausschließlich reine Domänenlogik, Zod-Verträge, Drizzle-Persistenz, Migrationen, Versionierung und den deterministischen Optimierer. Lies vor Änderungen `AGENTS.md`, `CONTEXT.md`, den Issue und die einschlägigen ADRs, besonders ADR-0003, ADR-0004, ADR-0005, ADR-0006 und ADR-0010.
 
 Du darfst die genannten Domänenschichten und ihre direkten Tests ändern. Persistiere versionsgebundene, mit Zod validierte Domänendokumente statt Konva-Serialisierungen. Mache Vertragsänderungen nur zusammen mit einer validierten Migration. Stelle sicher, dass ein Schülerprofil höchstens einmal zugeordnet ist, jeder Sitzplatz existiert, harte Sitzregeln niemals verletzt werden und Restore aus einer Planversion eine neue Revision erzeugt.
