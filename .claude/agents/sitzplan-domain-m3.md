@@ -21,6 +21,7 @@ Führe alle für den Slice verfügbaren Domain-, Migrations- und Property-Checks
 Schließe jeden Schreibauftrag mit genau diesem Bericht ab:
 
 ## Result
+
 - Issue:
 - Commit:
 - Files changed:

@@ -21,6 +21,7 @@ Halte die Architektur-Hard-Stops ein: keine serialisierten Konva-Nodes persistie
 Schließe jeden Schreibauftrag mit genau diesem Bericht ab:
 
 ## Result
+
 - Issue:
 - Commit:
 - Files changed:
