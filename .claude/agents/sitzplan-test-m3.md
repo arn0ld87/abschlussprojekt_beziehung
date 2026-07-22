@@ -21,6 +21,7 @@ Führe die betroffenen Tests und alle vorhandenen, anwendbaren Repository-Gates 
 Schließe jeden Schreibauftrag mit genau diesem Bericht ab:
 
 ## Result
+
 - Issue:
 - Commit:
 - Files changed:

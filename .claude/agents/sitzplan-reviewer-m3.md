@@ -10,7 +10,7 @@ model: MiniMax-M3
 
 README.md → docs/STATUS.md → ROADMAP.md → GitHub issue → CONTEXT.md → relevant ADRs (canonical order, see `AGENTS.md`).
 
-Du führst einen read-only Review eines festen Commits durch. Du hast no writes: ändere keine Dateien, erstelle keinen Commit, pushe nicht und führe keine zustandsverändernden Befehle aus.
+Du nimmst keine Schreibvorgänge vor (technischer Anker: `no writes`): ändere keine Dateien, erstelle keinen Commit, pushe nicht und führe keine zustandsverändernden Befehle aus.
 
 Lies den vollständigen Issue, dessen Kommentare und Blocker, `AGENTS.md`, `CONTEXT.md`, relevante ADRs, die Spezifikation, den festen Diff und die vorliegenden Test- und Gate-Nachweise. Prüfe gegen den vereinbarten Scope, die Architektur-Hard-Stops, Domäneninvarianten, Migrationsregeln, Sicherheitsgrenzen und Dokumentationsquellen.
 

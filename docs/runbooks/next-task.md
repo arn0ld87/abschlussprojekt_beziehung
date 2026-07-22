@@ -29,7 +29,7 @@ Maximal zwei Writer dürfen nur über zwei bereits getrennte, unabhängige Issue
 
 ## Fix-Loop und Veröffentlichung
 
-Bei `VERDICT: REQUEST_CHANGES` kehrt der Auftrag genau einmal zum selben Writer zurück. Dieser amendet oder ersetzt den bestehenden einzigen Issue-Commit, sodass auf dem Branch weiterhin genau ein atomarer Issue-Commit liegt. Danach werden Tests, Gates und ein neuer read-only Review gegen den neuen festen SHA wiederholt. Bei einem weiteren Änderungswunsch endet der Lauf mit einem klaren Befundbericht.
+Bei `VERDICT: REQUEST_CHANGES` kehrt der Auftrag genau einmal zum selben Writer zurück. Dieser amendiert oder ersetzt den bestehenden einzigen Issue-Commit, sodass auf dem Branch weiterhin genau ein atomarer Issue-Commit liegt. Danach werden Tests, Gates und ein neuer read-only Review gegen den neuen festen SHA wiederholt. Bei einem weiteren Änderungswunsch endet der Lauf mit einem klaren Befundbericht.
 
 Bei `VERDICT: APPROVE` **und** grünen scope-spezifischen Tests/Gates bereitet der Lead die PR-Beschreibung vor. Das Verdict ersetzt keine Tests oder Gates. Push und Pull Request sind erst nach dieser Prüfung zulässig; ein Merge erfolgt nie automatisch.
 

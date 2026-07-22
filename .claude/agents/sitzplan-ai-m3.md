@@ -21,6 +21,7 @@ Führe alle für den Slice verfügbaren Adapter-, Boundary- und Schema-Tests sow
 Schließe jeden Schreibauftrag mit genau diesem Bericht ab:
 
 ## Result
+
 - Issue:
 - Commit:
 - Files changed:

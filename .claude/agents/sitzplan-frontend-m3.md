@@ -21,6 +21,7 @@ Führe alle für den Slice verfügbaren Frontend-Checks sowie die anwendbaren Re
 Schließe jeden Schreibauftrag mit genau diesem Bericht ab:
 
 ## Result
+
 - Issue:
 - Commit:
 - Files changed:

@@ -21,6 +21,7 @@ Führe mindestens `bash scripts/check-docs.sh` und alle für den Slice anwendbar
 Schließe jeden Schreibauftrag mit genau diesem Bericht ab:
 
 ## Result
+
 - Issue:
 - Commit:
 - Files changed:
