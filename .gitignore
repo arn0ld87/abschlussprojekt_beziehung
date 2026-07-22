@@ -1,0 +1,5 @@
+# macOS
+.DS_Store
+
+# Code-Review-Graph (lokal, regenerierbar)
+.code-review-graph/
