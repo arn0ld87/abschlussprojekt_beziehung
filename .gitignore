@@ -3,3 +3,9 @@
 
 # Code-Review-Graph (lokal, regenerierbar)
 .code-review-graph/
+
+# Worktrees (Sitzplan-Agent-Worktrees, lokal)
+.worktrees/
+
+# Superpowers (Plugin-Cache, regenerierbar)
+.superpowers/

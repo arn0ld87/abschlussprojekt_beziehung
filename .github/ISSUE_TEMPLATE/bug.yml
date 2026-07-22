@@ -1,0 +1,67 @@
+name: Bug report
+description: Report one reproducible defect without sensitive data.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Entferne Secrets, Schlüssel, personenbezogene Informationen und echte Schülerdaten aus Logs und Schritten.
+  - type: textarea
+    id: observed-behavior
+    attributes:
+      label: Beobachtetes Verhalten
+      description: Was ist tatsächlich passiert?
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Erwartetes Verhalten
+      description: Was hätte passieren sollen?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Exakte Reproduktion
+      description: Nummerierte Schritte, Eingaben und Ergebnis.
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Umgebung
+      description: App-Version/Commit, Browser oder Betriebssystem und relevante Konfiguration ohne Geheimnisse.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Bereinigte Logs oder Screenshots
+      description: Füge nur bereinigte Diagnoseinformationen ein und bestätige die Entfernung sensibler Daten.
+    validations:
+      required: true
+  - type: checkboxes
+    id: log-redaction
+    attributes:
+      label: Log-Bereinigung
+      options:
+        - label: Ich habe Secrets und personenbezogene Daten aus allen Anhängen und Logs entfernt.
+          required: true
+  - type: textarea
+    id: regression-test-seam
+    attributes:
+      label: Regressionstest-Schnittstelle
+      description: Wo wird der Fehler zuerst als RED-Test nachgewiesen?
+    validations:
+      required: true
+  - type: textarea
+    id: blocked-by
+    attributes:
+      label: Blockiert durch
+      description: Verlinke Abhängigkeiten oder schreibe „Keine“.
+    validations:
+      required: true

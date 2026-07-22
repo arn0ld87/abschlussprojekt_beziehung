@@ -30,6 +30,16 @@
 - Nutze RED → GREEN → Refactor für Verhaltensänderungen. Veröffentliche erst nach allen anwendbaren grünen Gates und unabhängigem Review.
 - Halte Änderungen minimal und aktualisiere nur die fachlich passende Dokumentationsquelle im selben Slice.
 
+## Sitzplan-Orchestrierung
+
+- `/sitzplan-next-task` bearbeitet genau ein Issue mit Label `ready-for-agent`. Der Lead liest das vollständige Issue mit Kommentaren und Blockern, bevor er Arbeit delegiert.
+- Pro Issue genau ein schreibender Worker, genau ein isolierter Worktree, genau ein atomarer lokaler Commit.
+- Schreibende Worker pushen nicht. Ein Reviewer arbeitet schreibgeschützt gegen den festen Basis- und Issue-Commit.
+- Veröffentlichung erfordert, dass alle anwendbaren Tests und Repository-Gates `0` zurückgeben **und** ein expliziter Reviewer-`APPROVE` für den gefixten Commit vorliegt. `APPROVE` ist zusätzliche Evidenz, nie Ersatz für grüne Checks, und nie allein ausreichend.
+- Innerhalb eines Issue-Durchlaufs niemals zwei Writer gleichzeitig. Höchstens zwei Writer dürfen über zwei bereits getrennte, unabhängige Issues in separaten `/sitzplan-next-task`-Durchläufen parallel arbeiten — jeder mit eigenem Writer, Worktree, atomarem Commit und Pull Request.
+- Architektur, Security, Migrationen, mehrdeutige Spezifikationen und modulübergreifende Verträge bleiben Lead-Entscheidungen.
+- Worker-Zusammenfassungen sind Navigationshilfen, keine Evidenz; der Lead prüft Diff, Graph-Auswirkung und Gates selbst.
+
 ## Nicht aufnehmen
 
 - Keine Kopie von `docs/product.md`, keine Dateiliste, keine einmaligen Statusmeldungen und keine Regeln, die Tooling bereits erzwingt.
