@@ -128,6 +128,52 @@ for adr in docs/decisions/[0-9][0-9][0-9][0-9]-*.md; do
   grep -Fq '## Consequences' "$adr"
 done
 
+context_dir=docs/context
+domain_mirror="$context_dir/current/domain.md"
+test -s "$domain_mirror" || {
+  echo "missing: $domain_mirror (Single-Context-Layout mirror of CONTEXT.md)" >&2
+  exit 1
+}
+diff -q -w -B -Z "$domain_mirror" CONTEXT.md > /dev/null || {
+  echo "$domain_mirror diverges from CONTEXT.md (whitespace-insensitive)" >&2
+  exit 1
+}
+
+for number in $(seq 1 10); do
+  printf -v n '%04d' "$number"
+  ptr_dir="$context_dir/decisions"
+  ptr_files=()
+  while IFS= read -r -d '' line; do
+    ptr_files+=("${line#./}")
+  done < <(find "$ptr_dir" -maxdepth 1 -type f -name "${n}.md" -print0 2>/dev/null)
+  case "${#ptr_files[@]}" in
+    0)
+      echo "missing decision pointer: $ptr_dir/${n}.md" >&2
+      exit 1
+      ;;
+    1) ;;
+    *)
+      echo "duplicate decision pointer: $n (${ptr_files[*]})" >&2
+      exit 1
+      ;;
+  esac
+  ptr="${ptr_files[0]}"
+  refs=$(grep -oE "docs/decisions/${n}-[A-Za-z0-9._-]+\\.md" "$ptr" || true)
+  test -n "$refs" || {
+    echo "decision pointer $ptr does not reference an ADR file" >&2
+    exit 1
+  }
+  ref_count=$(printf '%s\n' "$refs" | wc -l | tr -d '[:space:]')
+  test "$ref_count" -eq 1 || {
+    echo "decision pointer $ptr references multiple ADRs" >&2
+    exit 1
+  }
+  test -f "$refs" || {
+    echo "decision pointer $ptr references missing ADR $refs" >&2
+    exit 1
+  }
+done
+
 # TODO: redact-required validation
 # This gate does not yet parse service YAML definitions. When a service kind
 # with `logs: true` or `secrets: true` is introduced, the corresponding
