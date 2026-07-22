@@ -89,9 +89,9 @@ describe("ci workflow contract", () => {
         if (typeof step.uses !== "string") continue;
         if (step.uses.startsWith("./") || step.uses.startsWith("docker://")) continue;
         expect(
-          /@[0-9a-f]{40}/.test(step.uses),
-          `job ${jobName} uses '${step.uses}' — must be SHA-pinned`,
-        ).toBe(true);
+          step.uses,
+          `job ${jobName} uses '${step.uses}' — must be a fully SHA-pinned action reference (owner/repo@<40 lowercase hex>)`,
+        ).toMatch(/^[\w.-]+\/[\w.\/-]+@[0-9a-f]{40}$/);
       }
     }
   });
