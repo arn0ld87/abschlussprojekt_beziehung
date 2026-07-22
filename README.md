@@ -28,11 +28,11 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-| Dienst | URL |
-|---|---|
-| Anwendung | <http://localhost:3000> |
-| Healthcheck | <http://localhost:3000/api/health> |
-| PostgreSQL | `localhost:5432` (internes Docker-Netzwerk) |
+| Dienst | Zugriff vom Host | Zugriff von Containern |
+|---|---|---|
+| Anwendung | <http://localhost:3000> | — |
+| Healthcheck | <http://localhost:3000/api/health> | — |
+| PostgreSQL | `localhost:5432` | Service-Name aus `docker-compose.yml` (z. B. `postgres`) |
 
 ### Host-Entwicklung
 
@@ -50,14 +50,14 @@ bun run dev
 | Lint | `bun run lint` | nach M0 #19 |
 | Typecheck | `bun run typecheck` | nach M0 #19 |
 | Vitest | `bun run test` | nach M0 #19 |
+| E2E | `bun run test:e2e` | nach M0 #19 |
 
 ### Worktrees
 
 Pro Issue-Lauf wird ein eigener Git-Worktree unter
-`/Volumes/T7/Projekte/abschlussprojekt_beziehung.worktrees/m0-<nr>-<name>`
-angelegt. Der Hauptklon bleibt unangetastet und der interne Speicher wird nicht
-belastet. Konvention und Anlagebefehl stehen in der `README.md` des
-Worktree-Wurzelordners.
+`<worktree-basisverzeichnis>/abschlussprojekt_beziehung.worktrees/m0-<nr>-<name>`
+angelegt. Der Hauptklon bleibt unangetastet. Konvention und Workflow sind in
+[`docs/runbooks/next-task.md`](docs/runbooks/next-task.md) dokumentiert.
 
 ## Produktziel
 
