@@ -6,7 +6,7 @@ Domänenverträge des Sitzplan-Projekts: Entitäten, Value Objects, Invarianten.
 
 `src/domain` darf **nichts** aus diesem Repo importieren. Alle anderen Layer
 dürfen aus `src/domain` importieren (Einbahnstraße, siehe
-[`docs/architecture.md`](../../../docs/architecture.md)).
+[`docs/architecture.md`](../../docs/architecture.md)).
 
 Insbesondere: keine Importe aus Next.js, React, Konva, Datenbank- oder
 KI-SDKs.

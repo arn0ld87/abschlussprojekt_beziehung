@@ -6,7 +6,7 @@ describe("M0 domain smoke", () => {
     expect(M0_DOMAIN_STUB).toBe("m0-domain-placeholder");
   });
 
-  it("ensures the dependency direction (domain is importable, no upstream deps)", () => {
+  it("keeps the domain placeholder importable", () => {
     expect(typeof M0_DOMAIN_STUB).toBe("string");
     expect(M0_DOMAIN_STUB.length).toBeGreaterThan(0);
   });

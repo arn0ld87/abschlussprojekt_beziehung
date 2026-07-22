@@ -5,8 +5,11 @@ Persistenz, externe Adapter, SDK-Wrapper (Datenbank, KI-Provider, Storage).
 ## Abhängigkeitsrichtung
 
 `infrastructure` darf **nur** aus `src/domain` importieren und implementiert
-Ports, die `services` oder `domain` definieren. UI darf `infrastructure` nicht
-direkt ansprechen — der Weg führt über `services`.
+die Ports, die `src/domain` definiert. UI darf `infrastructure` nicht direkt
+ansprechen — der Weg führt über `services`.
+
+Layering-Details (UI → services → domain ← infrastructure) siehe
+[`docs/architecture.md`](../../docs/architecture.md).
 
 ## Status M0
 
