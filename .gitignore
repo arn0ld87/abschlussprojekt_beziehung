@@ -15,3 +15,6 @@ node_modules/
 .next/
 out/
 *.tsbuildinfo
+
+# open-mem (Auto-Generated-Local-Session-Memory, regenerierbar)
+.open-mem/
