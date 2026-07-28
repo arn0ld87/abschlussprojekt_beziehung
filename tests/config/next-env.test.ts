@@ -21,7 +21,7 @@ describe("next-env.d.ts contract (Next.js 16 upgrade)", () => {
 
   it("still links to the current Next.js TypeScript config documentation", () => {
     expect(content).toContain(
-      "https://nextjs.org/docs/app/building-your-application/configuring/typescript",
+      "https://nextjs.org/docs/app/api-reference/config/typescript",
     );
   });
 

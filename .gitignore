@@ -18,3 +18,10 @@ out/
 
 # open-mem (Auto-Generated-Local-Session-Memory, regenerierbar)
 .open-mem/
+
+# Lokale Umgebung (Secrets, nie committen)
+.env
+.env.local
+
+# Docker Compose (lokale Laufzeit-Artefakte, regenerierbar)
+*.pid

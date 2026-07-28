@@ -32,6 +32,11 @@ describe("package.json contract (M0 #27 foundation baseline)", () => {
     });
   });
 
+  it("keeps the test script on vitest run (no watch flag leaking in CI)", () => {
+    expect(pkg.scripts.test).toBe("vitest run");
+    expect(pkg.scripts.test).not.toContain("--watch");
+  });
+
   it("runs lint through the flat-config eslint CLI with zero tolerated warnings", () => {
     expect(pkg.scripts.lint).toBe("eslint . --max-warnings=0");
     expect(pkg.scripts.lint).not.toContain("next lint");
@@ -46,8 +51,18 @@ describe("package.json contract (M0 #27 foundation baseline)", () => {
     expect(pkg.dependencies["react-dom"]).toBe("^19.0.0");
   });
 
-  it("declares exactly next, react, and react-dom as runtime dependencies", () => {
-    expect(Object.keys(pkg.dependencies).sort()).toEqual(["next", "react", "react-dom"]);
+  it("declares next, react, react-dom, and pg as runtime dependencies", () => {
+    expect(Object.keys(pkg.dependencies).sort()).toEqual([
+      "next",
+      "pg",
+      "react",
+      "react-dom",
+    ]);
+  });
+
+  it("adds pg as a runtime dependency for the M0 #20 healthcheck probe", () => {
+    expect(pkg.dependencies.pg).toBeDefined();
+    expect(pkg.dependencies.pg.length).toBeGreaterThan(0);
   });
 
   it("upgrades the eslint toolchain to the flat-config-compatible 9.x/8.x lines", () => {

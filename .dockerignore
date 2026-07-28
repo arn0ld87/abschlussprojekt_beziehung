@@ -1,0 +1,14 @@
+.git
+.github
+.worktrees
+.code-review-graph
+.superpowers
+.open-mem
+node_modules
+.next
+out
+coverage
+*.log
+.DS_Store
+.env
+.env.local
