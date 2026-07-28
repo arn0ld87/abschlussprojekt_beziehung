@@ -47,8 +47,8 @@ describe("bun.lock contract (M0 #27 Next.js 16 / React 19 upgrade)", () => {
     expect(lock.lockfileVersion).toBe(1);
   });
 
-  it("pins the workspace runtime dependencies to next 16.2.11, react/react-dom ^19, and pg", () => {
-    expect(workspace.dependencies.next).toBe("16.2.11");
+  it("pins the workspace runtime dependencies to patch-flexible next ~16.2.11, react/react-dom ^19, and pg", () => {
+    expect(workspace.dependencies.next).toBe("~16.2.11");
     expect(workspace.dependencies.react).toBe("^19.0.0");
     expect(workspace.dependencies["react-dom"]).toBe("^19.0.0");
     expect(workspace.dependencies.pg).toBeDefined();
@@ -57,14 +57,18 @@ describe("bun.lock contract (M0 #27 Next.js 16 / React 19 upgrade)", () => {
 
   it("pins the workspace devDependencies to the ESLint 9 flat-config toolchain", () => {
     expect(workspace.devDependencies.eslint).toBe("^9.0.0");
-    expect(workspace.devDependencies["eslint-config-next"]).toBe("16.2.11");
-    expect(workspace.devDependencies["@next/eslint-plugin-next"]).toBe("16.2.11");
+    expect(workspace.devDependencies["eslint-config-next"]).toBe("~16.2.11");
+    expect(workspace.devDependencies["@next/eslint-plugin-next"]).toBe("~16.2.11");
     expect(workspace.devDependencies["typescript-eslint"]).toBe("^8.0.0");
     expect(workspace.devDependencies["@eslint/js"]).toBe("^9.0.0");
   });
 
   it("resolves next, react, react-dom, and pg in the packages table to versions matching the declared ranges", () => {
-    expect(resolvedVersionOf(lock.packages, "next")).toBe("16.2.11");
+    const resolvedNext = resolvedVersionOf(lock.packages, "next");
+    const nextParts = resolvedNext.split(".").map((part) => Number.parseInt(part, 10));
+    expect(nextParts[0], "resolved next major").toBe(16);
+    expect(nextParts[1], "resolved next minor stays on the 16.2 line").toBe(2);
+    expect(nextParts[2], "resolved next patch is at least the 16.2.11 LTS patch").toBeGreaterThanOrEqual(11);
     expect(majorOf(resolvedVersionOf(lock.packages, "react"))).toBe(
       majorOf(workspace.dependencies.react),
     );

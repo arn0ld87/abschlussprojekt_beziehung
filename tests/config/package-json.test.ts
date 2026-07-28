@@ -17,8 +17,8 @@ describe("package.json contract (M0 #27 foundation baseline)", () => {
     expect(pkgText.endsWith("}\n\n")).toBe(false);
   });
 
-  it("requires Node >= 20.9.0 (raised from >=20.0.0)", () => {
-    expect(pkg.engines.node).toBe(">=20.9.0");
+  it("requires Node >= 24.0.0 (raised from >=20.9.0 in M0 #31 after the Node 20 EOL)", () => {
+    expect(pkg.engines.node).toBe(">=24.0.0");
   });
 
   it("declares exactly the dev/build/start/lint/typecheck/test scripts", () => {
@@ -42,8 +42,8 @@ describe("package.json contract (M0 #27 foundation baseline)", () => {
     expect(pkg.scripts.lint).not.toContain("next lint");
   });
 
-  it("upgrades next to the 16.2.11 LTS release", () => {
-    expect(pkg.dependencies.next).toBe("16.2.11");
+  it("allows patch updates for next on the 16.2.11 LTS line (M0 #31)", () => {
+    expect(pkg.dependencies.next).toBe("~16.2.11");
   });
 
   it("upgrades react and react-dom to the ^19.0.0 line", () => {
@@ -67,8 +67,8 @@ describe("package.json contract (M0 #27 foundation baseline)", () => {
 
   it("upgrades the eslint toolchain to the flat-config-compatible 9.x/8.x lines", () => {
     expect(pkg.devDependencies.eslint).toBe("^9.0.0");
-    expect(pkg.devDependencies["eslint-config-next"]).toBe("16.2.11");
-    expect(pkg.devDependencies["@next/eslint-plugin-next"]).toBe("16.2.11");
+    expect(pkg.devDependencies["eslint-config-next"]).toBe("~16.2.11");
+    expect(pkg.devDependencies["@next/eslint-plugin-next"]).toBe("~16.2.11");
     expect(pkg.devDependencies["@eslint/js"]).toBe("^9.0.0");
     expect(pkg.devDependencies["typescript-eslint"]).toBe("^8.0.0");
   });

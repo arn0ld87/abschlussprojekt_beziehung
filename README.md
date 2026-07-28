@@ -18,11 +18,14 @@ synchronisiert die Doku, hebt Next.js auf die 16-LTS und aktiviert die
 Lint-, Typecheck-, Test- und Build-Gates. Die Docker-Laufzeit und der
 Healthcheck-Endpunkt entstehen mit
 [#20](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/20).
+[#31 Runtime-Baseline](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/31)
+hebt die Laufzeit auf Node 24 LTS, macht Next.js patch-fähig (`~16.2.11`) und
+aktiviert Dependabot für wöchentliche, gruppierte Dependency-Updates.
 
 ### Voraussetzungen
 
 - Bun 1.3 oder neuer
-- Node.js 20.9 oder neuer
+- Node.js 24 LTS oder neuer
 
 ### Host-Entwicklung
 
