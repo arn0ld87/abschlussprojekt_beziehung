@@ -5,7 +5,7 @@
 
 ## Warum es Sitzplan gibt
 
-Lehrkräfte planen Sitzordnungen heute mit Papier, statischen Tabellen oder generischen Zeichenwerkzeugen. Keines dieser Werkzeuge kennt die fachliche Realität eines Klassenzimmers: Räume mit echten Maßen, Schüler mit unterschiedlichen Bedarfen, Regeln wie „nicht neben", und den Alltag, in dem Pläne wöchentlich angepasst und alte Stände wieder gebraucht werden.
+Lehrkräfte planen Sitzordnungen heute mit Papier, statischen Tabellen oder generischen Zeichenwerkzeugen. Keines dieser Werkzeuge kennt die fachliche Realität eines Klassenzimmers: Räume mit echten Maßen, Schülerprofile mit unterschiedlichen Bedarfen, Sitzregeln wie „nicht neben“ und den Alltag, in dem Sitzpläne wöchentlich angepasst und alte Planversionen wieder gebraucht werden.
 
 Sitzplan existiert, um genau diese eine Aufgabe besser zu lösen als jedes Generikum: **grafisch planen, sicher speichern, nachvollziehbar optimieren.**
 
