@@ -35,38 +35,22 @@ Lies vor jeder Änderung am Repository in dieser Reihenfolge:
 - Next.js Route Handler delegieren an Services; UI greift nicht direkt auf Datenbank oder KI-Provider zu.
 - M9/M10 erfordern ein neues, angenommenes ADR.
 
-## Verbindlicher Workflow
+## Gates
 
-1. Arbeite nie direkt auf `main`; nutze einen eigenen Branch für genau ein Issue und einen atomaren Commit.
-2. Nutze vor Exploration oder Änderung zuerst `code-review-graph`; bestätige Graph-Hinweise am echten Code oder an Tests.
-3. Nutze RED → GREEN → Refactor für Verhaltensänderungen und schwäche keine Assertions, Retries oder Gates ab.
-4. Aktualisiere nach Änderungen den Graphen mit `code-review-graph update --base HEAD --repo . --brief`.
-5. Nutze vor der Übergabe den `coderabbit`-Skill und `cr review --type uncommitted`; prüfe jedes Finding gegen den aktuellen Stand.
-6. Übergib erst, wenn alle anwendbaren Checks `0` liefern und ein unabhängiger Reviewer zugestimmt hat.
-7. Niemals Secrets, echte Schülerdaten, Provider-Keys oder lokale Hostkonfiguration ins Repository legen.
-
-`APPROVE` ist zusätzliche Evidenz neben grünen Tests/Gates, nie Ersatz, nie allein ausreichend.
-
-## Verifikation und Ausgabe
-
-- Führe immer `git diff --check` aus.
-- Dokumentations-Gate: `bash scripts/check-docs.sh`
+- Führe immer `git diff --check` aus. Dokumentations-Gate: `bash scripts/check-docs.sh`.
 - Anwendungs-Gates (`bun run lint`, `bun run typecheck`, `bun run test`, `bun run build`) sind seit M0 #27 vorhanden und bei jedem Slice grün zu halten. E2E-Gates sind M7 vorbehalten.
-- Berichte geänderte Pfade, ausgeführte Checks mit Exitstatus, validierte CodeRabbit-Findings und offene Risiken.
-- Worker-Zusammenfassungen sind Navigationshilfen, keine Evidenz; der Lead prüft Diff, Graph-Auswirkung und Gates selbst.
 
-## Agent skills
+## Detail-Dokumente (bei Bedarf laden)
 
+- **Workflow und Verifikation (7 Schritte, Gates, Berichtsformat):** [`docs/agents/workflow.md`](docs/agents/workflow.md)
 - **Issue tracker:** [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md)
 - **Triage labels:** kanonische Fünf-Rollen-Zuordnung in [`docs/agents/triage-labels.md`](docs/agents/triage-labels.md)
 - **Domain docs:** Single-Context-Layout in [`docs/agents/domain.md`](docs/agents/domain.md)
 
 ## Token Efficiency
 
-- Never re-read files you just wrote or edited. You know the contents.
-- Never re-run commands to "verify" unless the outcome was uncertain.
-- Don't echo back large blocks of code or file contents unless asked.
-- Batch related edits into single operations. Don't make 5 edits when 1 handles it.
-- Skip confirmations like "I'll continue..." Just do it.
-- If a task needs 1 tool call, don't use 3. Plan before acting.
-- Do not summarize what you just did unless the result is ambiguous or you need additional input.
+- **Keine Wiederholungslesung:** Lies Dateien nicht erneut ein, die du im selben Turn geschrieben oder bearbeitet hast.
+- **Keine redundante Verifikation:** Führe Ausführungsbefehle nicht doppelt aus, wenn die Ausgabe bereits eindeutig war.
+- **Batching:** Führe zusammengehörige Dateiänderungen in einem einzigen Edit-Schritt aus.
+- **Keine Floskeln:** Verzichte auf Bestätigungssätze („Ich werde jetzt …"). Starte direkt mit den Tool-Calls.
+- **Ergebnisfokussierte Antworten:** Fasse Änderungen nur zusammen, wenn das Ergebnis mehrdeutig war oder Unsicherheiten bestehen.
