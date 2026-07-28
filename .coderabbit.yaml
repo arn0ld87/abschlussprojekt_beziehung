@@ -1,0 +1,107 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "de-DE"
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  abort_on_close: true
+  enable_prompt_for_ai_agents: true
+  assess_linked_issues: true
+  suggested_labels: true
+  sequence_diagrams: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+
+  # Generierte Artefakte und Lockfiles raus — das ist der wirksamste
+  # Hebel gegen verrauschte Reviews.
+  path_filters:
+    - "!bun.lock"
+    - "!next-env.d.ts"
+    - "!.next/**"
+    - "!node_modules/**"
+
+  # Pfadspezifisches Projektwissen. CLAUDE.md und AGENTS.md liest der Bot
+  # ohnehin automatisch; hier steht nur, was pfadspezifisch ist.
+  path_instructions:
+    - path: "src/domain/**"
+      instructions: |
+        Reine Domänenlogik und Zod-Verträge. Muss unabhängig bleiben von
+        Next.js, React, Konva, Drizzle und KI-SDK. Schlage keine Imports aus
+        Framework-, Infrastruktur- oder UI-Schicht in die Domäne vor.
+        Harte Sitzregeln dürfen nicht verletzt werden; schlage keine
+        Lockerung von Invarianten vor.
+    - path: "src/services/**"
+      instructions: |
+        Framework-unabhängige Services. Route Handler in app/ delegieren
+        hierhin; keine Next.js-spezifischen APIs (Request, Response,
+        headers, cookies) innerhalb von Services vorschlagen.
+    - path: "src/infrastructure/**"
+      instructions: |
+        Persistiert werden versionierte, Zod-validierte Domänendokumente,
+        keine Konva-Serialisierung. Restore erzeugt eine neue Revision und
+        verändert Planversionen nicht.
+    - path: "app/**"
+      instructions: |
+        Route Handler delegieren an Services in src/services. UI-Komponenten
+        greifen nie direkt auf Datenbank oder KI-Provider zu. Kein separates
+        Backend neben dem App Router.
+    - path: "tests/**"
+      instructions: |
+        Tests sind die Spezifikation. Schlage niemals abgeschwächte
+        Assertions, globale Skips oder pauschale Retries vor, um rote Tests
+        grün zu machen. Nur Test- oder Fantasiedaten, keine echten
+        Schülerdaten.
+    - path: "docs/**"
+      instructions: |
+        docs/product.md ist die verbindliche Produkt- und Architekturquelle.
+        STATUS.md und CHANGELOG.md werden strukturell vom Dokumentationsgate
+        (scripts/check-docs.sh) geprüft; Formatierungsänderungen daran
+        können das Gate brechen.
+    - path: ".github/workflows/**"
+      instructions: |
+        GitHub Actions sind per Commit-SHA gepinnt. Schlage keine unpinned
+        Actions-Referenzen (@vX) vor.
+    - path: "scripts/**"
+      instructions: |
+        Repository-Gates. Keine Abschwächung oder Umgehung von Prüfungen
+        vorschlagen.
+    - path: "**/*.env*"
+      instructions: |
+        Keine Secrets, Provider-Keys oder lokalen Hostdaten im Repository.
+        Auf jeden Klartext-Wert hinweisen.
+
+  tools:
+    gitleaks:
+      enabled: true
+    yamllint:
+      enabled: true
+    markdownlint:
+      enabled: false  # Deckt sich mit scripts/check-docs.sh — sonst doppelt
+
+  # Jeder Commit braucht grüne Gates und ein Reviewer-APPROVE — Autofix
+  # würde das Review-Gate still umgehen.
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+    autofix:
+      enabled: false
+
+chat:
+  auto_reply: true
+
+code_generation:
+  docstrings:
+    language: "de-DE"
+
+knowledge_base:
+  learnings:
+    scope: "auto"
+  issues:
+    scope: "auto"
