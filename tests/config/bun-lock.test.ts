@@ -47,10 +47,12 @@ describe("bun.lock contract (M0 #27 Next.js 16 / React 19 upgrade)", () => {
     expect(lock.lockfileVersion).toBe(1);
   });
 
-  it("pins the workspace runtime dependencies to next 16.2.11 and react/react-dom ^19", () => {
+  it("pins the workspace runtime dependencies to next 16.2.11, react/react-dom ^19, and pg", () => {
     expect(workspace.dependencies.next).toBe("16.2.11");
     expect(workspace.dependencies.react).toBe("^19.0.0");
     expect(workspace.dependencies["react-dom"]).toBe("^19.0.0");
+    expect(workspace.dependencies.pg).toBeDefined();
+    expect(workspace.dependencies.pg.length).toBeGreaterThan(0);
   });
 
   it("pins the workspace devDependencies to the ESLint 9 flat-config toolchain", () => {
@@ -61,13 +63,16 @@ describe("bun.lock contract (M0 #27 Next.js 16 / React 19 upgrade)", () => {
     expect(workspace.devDependencies["@eslint/js"]).toBe("^9.0.0");
   });
 
-  it("resolves next, react, and react-dom in the packages table to versions matching the declared ranges", () => {
+  it("resolves next, react, react-dom, and pg in the packages table to versions matching the declared ranges", () => {
     expect(resolvedVersionOf(lock.packages, "next")).toBe("16.2.11");
     expect(majorOf(resolvedVersionOf(lock.packages, "react"))).toBe(
       majorOf(workspace.dependencies.react),
     );
     expect(majorOf(resolvedVersionOf(lock.packages, "react-dom"))).toBe(
       majorOf(workspace.dependencies["react-dom"]),
+    );
+    expect(majorOf(resolvedVersionOf(lock.packages, "pg"))).toBe(
+      majorOf(workspace.dependencies.pg),
     );
   });
 

@@ -31,6 +31,19 @@ bun install --frozen-lockfile
 bun run dev
 ```
 
+### Lokales Setup mit Docker Compose
+
+Die Compose-Definition startet die Next.js-Anwendung und einen PostgreSQL-Server gemeinsam. Beide Services teilen sich das Netzwerk `sitzplan`; PostgreSQL-Daten liegen im benannten Volume `sitzplan_pgdata`. Die Anwendung startet erst, wenn der PostgreSQL-Healthcheck eine echte `SELECT 1`-Antwort liefert; der `app`-Healthcheck pollt `GET /api/health`, das denselben `SELECT 1` gegen PostgreSQL ausführt.
+
+```bash
+cp .env.example .env
+docker compose up -d --build
+curl http://localhost:3000/api/health
+docker compose down -v
+```
+
+`.env.example` enthält ausschließlich Variablen ohne echte Secrets. `.env` bleibt unversioniert.
+
 ### Qualitäts-Gates
 
 | Gate | Befehl | Status |
