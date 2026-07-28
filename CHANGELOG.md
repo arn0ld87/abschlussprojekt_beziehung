@@ -31,7 +31,7 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 
 ### Known limitations
 
-- Das Container-Image für M0 #20 kopiert nur den Next.js-Standalone-Server und `public/`; `.next/static` wird nicht mitgegeben. Der Healthcheck-Endpunkt `/api/health` ist rein dynamisch und benötigt keine statischen Assets. Statische Seiten und Client-Chunks stehen im Container therefore erst ab M1+ zur Verfügung, wenn der Health-Only-Scope zugunsten echter UI-Routen erweitert wird.
+- Das Container-Image für M0 #20 kopiert nur den Next.js-Standalone-Server und `public/`; `.next/static` wird nicht mitgegeben. Der Healthcheck-Endpunkt `/api/health` ist rein dynamisch und benötigt keine statischen Assets. Statische Seiten und Client-Chunks stehen im Container daher erst ab M1+ zur Verfügung, wenn der Health-Only-Scope zugunsten echter UI-Routen erweitert wird.
 
 ### Changed
 
