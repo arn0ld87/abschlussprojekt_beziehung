@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import "../src/ui/globals.css";
 
 export const metadata = {
   title: "Abschlussprojekt Beziehung — Sitzplan M0",
