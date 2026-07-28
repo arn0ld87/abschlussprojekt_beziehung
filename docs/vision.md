@@ -16,7 +16,7 @@ Eine einzelne Lehrkraft an einem eigenen Gerät oder auf einem eigenen Server. K
 ## Leitprinzipien
 
 1. **Lehrerwerkzeug, nicht CAD.** Jede Interaktion misst sich daran, ob eine Lehrkraft sie ohne Handbuch versteht. Warm, ruhig, fachlich — kein technisches Dashboard.
-2. **Der Mensch entscheidet, die KI schlägt vor.** KI-Ausgaben werden validiert, begründet und als Diff gezeigt. Kein Sprachmodell verändert Plan, Canvas oder Datenbank ohne ausdrückliche Bestätigung. Harte Sitzregeln sind unantastbar.
+2. **Der Mensch entscheidet, die KI schlägt vor.** KI-Ausgaben werden validiert, begründet und als Diff gezeigt. Ein Sprachmodell verändert Plan, Canvas oder Datenbank niemals selbst — auch nicht nach Bestätigung. Es liefert validierte Planvorschläge; die Anwendung setzt sie erst nach ausdrücklicher Bestätigung um. Harte Sitzregeln sind unantastbar.
 3. **Datenhoheit liegt bei der Lehrkraft.** Selbst gehostet, PostgreSQL vor Ort, BYOK für KI-Provider, Export und Backup als Bürgerrechte, nicht als Premium-Feature.
 4. **Ehrliche Daten.** Bis zur ausdrücklichen Produktivfreigabe (M12) läuft das Produkt ausschließlich mit Test- und Fantasiedaten. Das ist ein Versprechen an Schüler und Eltern, keine technische Einschränkung.
 5. **Determinismus vor Magie.** Der Optimierer liefert reproduzierbare Ergebnisse mit nachvollziehbarer Begründung. Ein Vorschlag, den man nicht erklären kann, ist keiner.

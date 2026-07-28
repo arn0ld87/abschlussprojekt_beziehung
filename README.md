@@ -84,6 +84,7 @@ Der verifizierte Istzustand steht in `docs/STATUS.md`. Produktcode ist noch nich
 
 Diese Reihenfolge trennt Einstieg, überprüfbaren Istzustand, strategische Milestones und ausführbare Arbeit. Produkt- und Architekturdetails bleiben verbindlich in:
 
+- [`docs/vision.md`](docs/vision.md) — Leitbild und Entscheidungsmaßstab (Warum und Wohin).
 - [`docs/product.md`](docs/product.md) — bestätigte Produkt- und Architekturspezifikation (Was und Wie).
 - [`docs/architecture.md`](docs/architecture.md) — Modulgrenzen, Abhängigkeitsrichtung und Verträge (Wie im Detail).
 
