@@ -18,15 +18,15 @@ describe("docs/STATUS.md reflects the M0 #27 foundation baseline", () => {
     expect(notYetSection).not.toContain("automatisierte Produkt-Tests");
   });
 
-  it("still lists the database schema/migrations, Docker runtime, and release artifact as missing", () => {
+  it("still lists the database schema/migrations and release artifact as missing (Docker runtime shipped in M0 #20/#31)", () => {
     expect(notYetSection).toContain("Datenbankschema und Migrationen");
-    expect(notYetSection).toContain("Docker-Laufzeit");
     expect(notYetSection).toContain("Release-Artefakt");
+    expect(notYetSection).not.toContain("Docker-Laufzeit");
   });
 
-  it("keeps exactly three remaining 'Noch nicht vorhanden' bullets", () => {
+  it("keeps exactly two remaining 'Noch nicht vorhanden' bullets", () => {
     const bullets = notYetSection.split("\n").filter((line) => line.trim().startsWith("-"));
-    expect(bullets).toHaveLength(3);
+    expect(bullets).toHaveLength(2);
   });
 });
 

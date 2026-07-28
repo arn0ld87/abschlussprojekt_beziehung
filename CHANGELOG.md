@@ -4,8 +4,17 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 
 ## Unreleased
 
+## M0 — Foundation — 29.07.2026
+
+**Betroffene Bereiche:** Repository-Governance, Dokumentationslayout, Next.js-Scaffold, Anwendungs-CI, Runtime-Baseline, Docker-Compose und Designsystem.
+
+**Child-Issues:** #17 (PR #23, Merge `d6051ed`), #18 (PR #25, Merge `eb8b969`), #19 (PR #26, Merge `82e3d68`), #20 (PR #29, Merge `b002562`), #21 (PR #30, Merge `954f1d9`), #27 (PR #28, Merge `381467a`), #31 (PR #37, Merge `da673c8`). Die M0-Akzeptanz läuft über #22; der Milestone `M0 — Foundation` enthält zusätzlich das Parent-Issue #2.
+
 ### Added
 
+- Domain-Layout mit Single-Context-Pointer-Dateien unter `docs/context/` (M0 #17)
+- Next.js-App-Router-Scaffold mit TypeScript Strict (M0 #18)
+- Anwendungs-CI mit Lint-, Typecheck- und Vitest-Jobs (M0 #19)
 - Docker Compose-Definition für die Next.js-Anwendung und PostgreSQL (M0 #20)
 - Multi-Stage-Dockerfile mit Bun-Lockfile-Modus und Standalone-Build (M0 #20)
 - Infrastruktur-Healthcheck-Route `/api/health` mit echtem `SELECT 1` gegen PostgreSQL (M0 #20)
@@ -14,6 +23,11 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 - `pg` als vierte Runtime-Dependency für den Postgres-Healthcheck (M0 #20)
 - app-Healthcheck im Compose-File über Bun-natives `fetch` statt `curl` (M0 #20, oven/bun-Image enthält kein curl)
 - Compose-Substitutions-Defaults für `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` und `PORT` (M0 #20)
+- Designsystem-Tokens und Basis-Komponenten mit Playground-Seite `/design` (M0 #21)
+- Runtime-Baseline auf Node 24 LTS mit nachgewiesenen Engines und `packageManager`-Pin (M0 #31)
+- wöchentlicher Dependabot-Update-Mechanismus mit gruppierten Dev-Dependency-PRs (M0 #31)
+- getracktes `public/.gitkeep` als Docker-Build-Fix für den Runner-Stage-Copy (M0 #31)
+- Container-Build-Nachweis als zusätzlicher CI-Job (M0 #31)
 
 ### Known limitations
 
@@ -21,6 +35,7 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 
 ### Changed
 
+- Foundation-Baseline auf Next.js 16.2.11 LTS mit ESLint-9-Flat-Config und CI-Build-Gate (M0 #27)
 - `next.config.mjs` aktiviert den Standalone-Build für das Container-Image (M0 #20)
 - M0-#27-Vertrag um `pg` als Runtime-Dependency weiterentwickelt (M0 #20)
 - bestätigte Produkt- und Architektur-Spezifikation
@@ -35,7 +50,4 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 - kopierfertigen MiniMax-M3-Master-Prompt für den milestoneweisen Entwicklungsstart
 - GitHub-Issue-Formulare für Features und Bugs, PR-Evidenzvorlage sowie Docs-CI-Gate
 - dreizehn verifizierte Milestone-Parent-Issues als ausführbarer Issue-Frontier
-
-### Changed
-
 - Bootstrap-Gate prüft die vollständige MiniMax-Agenten- und Ein-Issue-Workflow-Konfiguration

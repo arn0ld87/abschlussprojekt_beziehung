@@ -18,9 +18,9 @@ describe("docs/STATUS.md", () => {
     expect(notYetSection).not.toContain("automatisierte Produkt-Tests");
   });
 
-  it("still lists the remaining outstanding foundation work", () => {
+  it("still lists the remaining outstanding foundation work (Docker runtime shipped in M0 #20/#31)", () => {
     expect(notYetSection).toContain("Datenbankschema und Migrationen");
-    expect(notYetSection).toContain("Docker-Laufzeit");
     expect(notYetSection).toContain("Release-Artefakt");
+    expect(notYetSection).not.toContain("Docker-Laufzeit");
   });
 });
