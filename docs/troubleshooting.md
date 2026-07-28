@@ -26,12 +26,22 @@ Diagnose: `docker compose logs app` und `docker compose logs postgres`. Der Heal
 Ursache: Das Volume `sitzplan_pgdata` enthält noch die alte Rolle. Ausweg: `docker compose down -v` (löscht alle lokalen Daten!) und neu starten.
 
 **Port 3000 ist belegt.**
-Ausweg: `PORT=<freier-port> docker compose up -d` — der Compose-Port-Mapping nutzt die Variable auf der Host-Seite.
+Ausweg: `PORT` allein reicht nicht — die Variable steuert sowohl das Host-Mapping als auch den Container-Port, beide Seiten müssen konsistent bleiben. Für einen abweichenden Host-Port eine Compose-Override-Datei anlegen:
+
+```yaml
+# docker-compose.override.yml (nicht committen, lokal)
+services:
+  app:
+    ports:
+      - "8080:3000"
+```
+
+Danach `docker compose up -d` — die App antwortet auf `http://localhost:8080`.
 
 ## Qualitäts-Gates
 
-**`bash scripts/check-docs.sh` meldet `placeholder found`, obwohl kein TODO geändert wurde.**
-Ursache: Der Scan durchsucht `.claude/` rekursiv und trifft lokale Agent-Worktrees unter `.claude/worktrees/`, deren Dateien legitime TODO-Kommentare enthalten. Status: als Issue [#34](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/34) erfasst. Workaround bis zum Fix: Gate im eigenen Feature-Worktree ohne verschachtelte Worktrees laufen lassen oder nach Abschluss der Agent-Läufe erneut ausführen. In CI tritt das Problem nicht auf.
+**`bash scripts/check-docs.sh` meldet `placeholder found`, obwohl kein Platzhalter geändert wurde.**
+Ursache: Der Scan durchsucht `.claude/` rekursiv und trifft lokale Agent-Worktrees unter `.claude/worktrees/`, deren Dateien legitime To-do-Kommentare enthalten, die dem Platzhalter-Muster entsprechen. Status: als Issue [#34](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/34) erfasst. Workaround bis zum Fix: Gate im eigenen Feature-Worktree ohne verschachtelte Worktrees laufen lassen oder nach Abschluss der Agent-Läufe erneut ausführen. In CI tritt das Problem nicht auf.
 
 **`git diff --check` meldet Whitespace-Fehler.**
 Ausweg: betroffene Zeilen säubern (Trailing Whitespace, Tabs), nicht mit Editor-Excludes übergehen — der Check bleibt Gate.

@@ -23,7 +23,7 @@
 
 - Paketmanager ist Bun (Version via `packageManager` in [`package.json`](../package.json)); `bun install --frozen-lockfile` hält das Lockfile reproduzierbar.
 - Die Node-Baseline steht in `engines.node` und muss mit Dockerfile-Basisimage und CI-Runner übereinstimmen.
-- Dependency-Updates laufen über den in `.github/` konfigurierten Update-Mechanismus (Dependabot/Renovate); Update-PRs durchlaufen dieselben Gates wie jeder andere PR.
+- Dependency-Updates laufen über Dependabot (Konfiguration: `.github/dependabot.yml`, eingeführt mit M0-Slice [#31](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/31)); Update-PRs durchlaufen dieselben Gates wie jeder andere PR. Bis dahin erfolgen Updates manuell über geprüfte PRs.
 
 ## Qualitäts-Gates (lokal wie CI)
 
