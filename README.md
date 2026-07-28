@@ -2,10 +2,10 @@
 
 Grafische, selbst gehostete Single-User-PWA zum Erstellen, dauerhaften Speichern, Wiederherstellen und KI-gestützten Optimieren von Sitzordnungen.
 
-> **Projektstatus: M0 — Foundation.** Der aktuelle Stand ist ein Entwicklungsprototyp für Test- und Fantasiedaten. Nicht mit echten Schuldaten verwenden.
+> **Projektstatus: M1 — Klassen (M0 — Foundation abgeschlossen).** Der aktuelle Stand ist ein Entwicklungsprototyp für Test- und Fantasiedaten. Nicht mit echten Schuldaten verwenden.
 
 [![Repository](https://img.shields.io/badge/GitHub-arn0ld87%2Fabschlussprojekt--beziehung-111?style=flat-square&logo=github)](https://github.com/arn0ld87/abschlussprojekt_beziehung)
-[![Phase](https://img.shields.io/badge/Phase-M0%20Foundation-0E8A16?style=flat-square)](./docs/STATUS.md)
+[![Phase](https://img.shields.io/badge/Phase-M1%20Klassen-0E8A16?style=flat-square)](./docs/STATUS.md)
 
 ## App starten
 
@@ -79,7 +79,7 @@ Next.js mit App Router und TypeScript, React-Konva, PostgreSQL mit Drizzle ORM, 
 
 ## Entwicklungsstatus
 
-Der verifizierte Istzustand steht in `docs/STATUS.md`. Produktcode ist noch nicht begonnen; der aktuelle Freigabepunkt ist M0.
+Der verifizierte Istzustand steht in `docs/STATUS.md`. Produktcode ist noch nicht begonnen; der aktuelle Freigabepunkt ist M1.
 
 ## Dokumentationshierarchie
 
