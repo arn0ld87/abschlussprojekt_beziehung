@@ -8,6 +8,7 @@ const workflowText = readFileSync(workflowPath, "utf8");
 const workflow = parse(workflowText) as Record<string, unknown>;
 
 const ACTION_CHECKOUT = /^actions\/checkout@[0-9a-f]{40}$/;
+const ACTION_SETUP_NODE = /^actions\/setup-node@[0-9a-f]{40}$/;
 const ACTION_SETUP_BUN = /^oven-sh\/setup-bun@[0-9a-f]{40}$/;
 
 type Step = {
@@ -49,6 +50,11 @@ function assertJob(jobName: string, job: Job, expected: StepShape[]): void {
 const CHECKOUT_STEP: StepShape = {
   uses: ACTION_CHECKOUT,
   with: { "persist-credentials": false },
+};
+
+const SETUP_NODE_STEP: StepShape = {
+  uses: ACTION_SETUP_NODE,
+  with: { "node-version": "24" },
 };
 
 const SETUP_BUN_STEP: StepShape = {
@@ -97,36 +103,40 @@ describe("ci workflow contract", () => {
     }
   });
 
-  it("lint job: checkout, setup-bun (bun-version-file), install, run lint", () => {
+  it("lint job: checkout, setup-node (node 24), setup-bun (bun-version-file), install, run lint", () => {
     assertJob("lint", jobs.lint!, [
       CHECKOUT_STEP,
+      SETUP_NODE_STEP,
       SETUP_BUN_STEP,
       INSTALL_STEP,
       { run: "bun run lint" },
     ]);
   });
 
-  it("typecheck job: checkout, setup-bun (bun-version-file), install, run typecheck", () => {
+  it("typecheck job: checkout, setup-node (node 24), setup-bun (bun-version-file), install, run typecheck", () => {
     assertJob("typecheck", jobs.typecheck!, [
       CHECKOUT_STEP,
+      SETUP_NODE_STEP,
       SETUP_BUN_STEP,
       INSTALL_STEP,
       { run: "bun run typecheck" },
     ]);
   });
 
-  it("test job: checkout, setup-bun (bun-version-file), install, run test", () => {
+  it("test job: checkout, setup-node (node 24), setup-bun (bun-version-file), install, run test", () => {
     assertJob("test", jobs.test!, [
       CHECKOUT_STEP,
+      SETUP_NODE_STEP,
       SETUP_BUN_STEP,
       INSTALL_STEP,
       { run: "bun run test" },
     ]);
   });
 
-  it("build job: checkout, setup-bun (bun-version-file), install, run build", () => {
+  it("build job: checkout, setup-node (node 24), setup-bun (bun-version-file), install, run build", () => {
     assertJob("build", jobs.build!, [
       CHECKOUT_STEP,
+      SETUP_NODE_STEP,
       SETUP_BUN_STEP,
       INSTALL_STEP,
       { run: "bun run build" },

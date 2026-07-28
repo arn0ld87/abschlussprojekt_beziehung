@@ -1,0 +1,17 @@
+# Dependency-Update-Mechanismus (M0 #31).
+# Version-Updates laufen woechentlich; alle Dev-Dependencies werden in einem
+# gemeinsamen PR gruppiert. Sicherheitsupdates erzeugt Dependabot unabhaengig
+# von diesen Gruppen immer als separate PRs pro Befund.
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    groups:
+      dev-dependencies:
+        dependency-type: development

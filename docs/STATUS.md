@@ -13,6 +13,7 @@
 - Next.js-App-Router-Scaffold (M0 #18)
 - Anwendungs-CI mit Lint-, Typecheck- und Vitest-Gates (M0 #19)
 - Foundation-Baseline mit Next.js 16.2.11 LTS, ESLint-9-Flat-Config und CI-Build-Gate (M0 #27)
+- Runtime-Baseline Node 24 LTS, patch-fähige Next.js-Range (`~16.2.11`) und wöchentlicher Dependabot-Update-Mechanismus mit gruppierten Dev-Dependency-PRs (M0 #31)
 
 ## Noch nicht vorhanden
 
