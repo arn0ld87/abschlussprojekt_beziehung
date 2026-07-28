@@ -7,13 +7,13 @@ export default function HomePage() {
         M5, Persistenz und KI-Adapter ab M6/M9.
       </p>
       <ul>
-        <li>Stack: Next.js 14 (App Router) + TypeScript strict + Vitest.</li>
+        <li>Stack: Next.js 16 (App Router) + TypeScript strict + Vitest.</li>
         <li>
           Modulgrenzen: <code>src/domain</code>, <code>src/services</code>,{" "}
           <code>src/infrastructure</code> — in M0 leer, Stubs dokumentieren die
           Abhängigkeitsrichtung.
         </li>
-        <li>Nächster Meilenstein: M3 — Domain Contracts (Issue #20).</li>
+        <li>Nächster Meilenstein: M1 Klassen (Issue #3).</li>
       </ul>
     </main>
   );

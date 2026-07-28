@@ -1,6 +1,6 @@
 # Projektstatus
 
-**Stand:** 22.07.2026<br>
+**Stand:** 28.07.2026<br>
 **Phase:** M0 — Foundation<br>
 **Produktcode:** noch nicht begonnen
 
@@ -10,12 +10,13 @@
 - Zielstack und MVP-Grenzen sind entschieden
 - Projekt-Bootstrap, Agentenworkflow und Dokumentationsgate sind verifiziert
 - dreizehn offene Milestone-Parent-Issues mit dokumentierten Blockern
+- Next.js-App-Router-Scaffold (M0 #18)
+- Anwendungs-CI mit Lint-, Typecheck- und Vitest-Gates (M0 #19)
+- Foundation-Baseline mit Next.js 16.2.11 LTS, ESLint-9-Flat-Config und CI-Build-Gate (M0 #27)
 
 ## Noch nicht vorhanden
 
-- Next.js-Anwendung
 - Datenbankschema und Migrationen
-- automatisierte Produkt-Tests
 - Docker-Laufzeit
 - Release-Artefakt
 

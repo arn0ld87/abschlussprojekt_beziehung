@@ -9,30 +9,20 @@ Grafische, selbst gehostete Single-User-PWA zum Erstellen, dauerhaften Speichern
 
 ## App starten
 
-Die lauffähige Anwendung entsteht erst nach Abschluss der M0-Slices
-[#18 Next.js-Scaffold](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/18),
-[#19 Anwendungs-CI](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/19) und
-[#20 Docker Compose](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/20).
-Bis dahin sind ausschließlich die dokumentarischen und Diffs-Gates aktiv.
+Die Next.js-Scaffold läuft seit M0-Slice
+[#18](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/18), die
+Anwendungs-CI seit
+[#19](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/19).
+[#27 Foundation-Baseline](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/27)
+synchronisiert die Doku, hebt Next.js auf die 16-LTS und aktiviert die
+Lint-, Typecheck-, Test- und Build-Gates. Die Docker-Laufzeit und der
+Healthcheck-Endpunkt entstehen mit
+[#20](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/20).
 
 ### Voraussetzungen
 
 - Bun 1.3 oder neuer
-- Node.js 20 oder neuer
-- Docker und Docker Compose
-
-### Docker Compose (Empfehlung)
-
-```bash
-cp .env.example .env
-docker compose up -d --build
-```
-
-| Dienst | Zugriff vom Host | Zugriff von Containern |
-|---|---|---|
-| Anwendung | <http://localhost:3000> | — |
-| Healthcheck | <http://localhost:3000/api/health> | — |
-| PostgreSQL | `localhost:5432` | Service-Name aus `docker-compose.yml` (z. B. `postgres`) |
+- Node.js 20.9 oder neuer
 
 ### Host-Entwicklung
 
@@ -47,10 +37,10 @@ bun run dev
 |---|---|---|
 | Dokumentation | `bash scripts/check-docs.sh` | aktiv |
 | App-Diff | `git diff --check` | aktiv |
-| Lint | `bun run lint` | nach M0 #19 |
-| Typecheck | `bun run typecheck` | nach M0 #19 |
-| Vitest | `bun run test` | nach M0 #19 |
-| E2E | `bun run test:e2e` | nach M0 #19 |
+| Lint | `bun run lint` | aktiv (M0 #27) |
+| Typecheck | `bun run typecheck` | aktiv (M0 #27) |
+| Vitest | `bun run test` | aktiv (M0 #27) |
+| Build | `bun run build` | aktiv (M0 #27) |
 
 ### Worktrees
 

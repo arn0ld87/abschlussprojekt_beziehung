@@ -9,7 +9,7 @@ tools: Skill, Read, Grep, Glob, Bash, Edit, Write, mcp__code-review-graph__get_m
 ## Auftrag
 
 - Bearbeite genau einen freigegebenen vertikalen Slice gegen [`docs/product.md`](docs/product.md).
-- Das Repository enthält derzeit noch keine ausführbare Anwendung. Erfinde weder Projektstruktur noch Build-, Test-, Lint- oder Run-Befehle.
+- Die ausführbaren Build-, Test-, Lint- und Run-Skripte sind seit M0-Slice #27 im Repository vorhanden. Verwende ausschließlich die dort deklarierten Befehle und keine erfundenen.
 - Architektur, Security, Migrationen, mehrdeutige Spezifikationen und modulübergreifende Verträge bleiben Entscheidungen des Leads.
 
 ## Read order
@@ -51,7 +51,7 @@ Lies vor jeder Änderung am Repository in dieser Reihenfolge:
 
 - Führe immer `git diff --check` aus.
 - Dokumentations-Gate: `bash scripts/check-docs.sh`
-- Anwendungs-Gates (`bun run lint`, `typecheck`, `test`, `test:e2e`) erst ausführen, nachdem das zuständige Milestone-Issue die zugehörigen Skripte eingecheckt hat. Während der aktuellen M0-Doku-Phase nicht vorhanden — melde „nicht vorhanden" statt Befehle zu raten.
+- Anwendungs-Gates (`bun run lint`, `bun run typecheck`, `bun run test`, `bun run build`) sind seit M0 #27 vorhanden und bei jedem Slice grün zu halten. E2E-Gates sind M7 vorbehalten.
 - Berichte geänderte Pfade, ausgeführte Checks mit Exitstatus, validierte CodeRabbit-Findings und offene Risiken.
 - Worker-Zusammenfassungen sind Navigationshilfen, keine Evidenz; der Lead prüft Diff, Graph-Auswirkung und Gates selbst.
 
