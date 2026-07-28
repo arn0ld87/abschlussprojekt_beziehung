@@ -17,6 +17,7 @@ type Step = {
 };
 
 type Job = {
+  name?: string;
   permissions?: unknown;
   steps?: Step[];
 };
@@ -79,8 +80,8 @@ describe("ci workflow contract", () => {
     expect(concurrency.group as string).toContain("${{ github.workflow }}");
   });
 
-  it("declares exactly three top-level jobs: lint, typecheck, test", () => {
-    expect(Object.keys(jobs).sort()).toEqual(["lint", "test", "typecheck"]);
+  it("declares exactly four top-level jobs: build, lint, test, typecheck", () => {
+    expect(Object.keys(jobs).sort()).toEqual(["build", "lint", "test", "typecheck"]);
   });
 
   it("pins every third-party action to an immutable 40-char SHA", () => {
@@ -91,7 +92,7 @@ describe("ci workflow contract", () => {
         expect(
           step.uses,
           `job ${jobName} uses '${step.uses}' — must be a fully SHA-pinned action reference (owner/repo@<40 lowercase hex>)`,
-        ).toMatch(/^[\w.-]+\/[\w.\/-]+@[0-9a-f]{40}$/);
+        ).toMatch(/^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/);
       }
     }
   });
@@ -121,6 +122,22 @@ describe("ci workflow contract", () => {
       INSTALL_STEP,
       { run: "bun run test" },
     ]);
+  });
+
+  it("build job: checkout, setup-bun (bun-version-file), install, run build", () => {
+    assertJob("build", jobs.build!, [
+      CHECKOUT_STEP,
+      SETUP_BUN_STEP,
+      INSTALL_STEP,
+      { run: "bun run build" },
+    ]);
+  });
+
+  it("gives every job a human-readable display name matching its job id", () => {
+    expect(jobs.build?.name).toBe("Build");
+    expect(jobs.lint?.name).toBe("Lint");
+    expect(jobs.typecheck?.name).toBe("Typecheck");
+    expect(jobs.test?.name).toBe("Test");
   });
 
   it("keeps workflow-level permissions to contents: read and forbids per-job overrides", () => {

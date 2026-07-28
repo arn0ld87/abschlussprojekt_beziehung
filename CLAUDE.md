@@ -2,8 +2,13 @@
 
 ## Kritische Befehle
 
-- Aktuell gibt es keine ausführbaren Build-, Test-, Lint- oder Run-Skripte. Erfinde keine Befehle.
+- Lint: `bun run lint`
+- Typecheck: `bun run typecheck`
+- Tests: `bun run test`
+- Build: `bun run build`
+- App starten: `bun run dev`
 - Basisprüfung: `git diff --check`
+- Dokumentationsgate: `bash scripts/check-docs.sh`
 - Graph nach Änderungen: `code-review-graph update --base HEAD --repo . --brief`
 - Lokaler Abschlussreview: `cr review --type uncommitted`
 
