@@ -71,7 +71,9 @@ describe("bun.lock contract (M0 #27 Next.js 16 / React 19 upgrade)", () => {
     expect(majorOf(resolvedVersionOf(lock.packages, "react-dom"))).toBe(
       majorOf(workspace.dependencies["react-dom"]),
     );
-    expect(lock.packages.pg).toBeDefined();
+    expect(majorOf(resolvedVersionOf(lock.packages, "pg"))).toBe(
+      majorOf(workspace.dependencies.pg),
+    );
   });
 
   it("resolves eslint in the packages table to the 9.x line (no longer 8.x)", () => {

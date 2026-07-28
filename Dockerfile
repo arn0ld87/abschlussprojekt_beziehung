@@ -12,7 +12,8 @@ RUN bun run build
 FROM oven/bun:1.3 AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=build /app/.next/standalone ./dist
-COPY --from=build /app/public ./public
+COPY --from=build --chown=bun:bun /app/.next/standalone ./dist
+COPY --from=build --chown=bun:bun /app/public ./public
+USER bun
 EXPOSE 3000
 CMD ["bun", "run", "dist/server.js"]

@@ -51,4 +51,23 @@ describe(".gitignore contract (M0 #20 keeps .env out of version control)", () =>
     const content = readFileSync(gitignorePath, "utf8");
     expect(content).not.toMatch(/(^|\n)\.env\.example(\n|$)/);
   });
+
+  it("ignores all .env variants via a wildcard but keeps .env.example tracked", () => {
+    const content = readFileSync(gitignorePath, "utf8");
+    expect(content).toMatch(/(^|\n)\.env\.\*(\n|$)/);
+    expect(content).toMatch(/(^|\n)!\.env\.example(\n|$)/);
+    // Keine einzelne Variantenzeile (.env.production/.env.development) mehr nötig.
+    expect(content).not.toMatch(/(^|\n)\.env\.(production|development|test)(\n|$)/);
+  });
+});
+
+describe(".dockerignore contract (M0 #20 keeps env files out of the image context)", () => {
+  const dockerignorePath = resolve(process.cwd(), ".dockerignore");
+
+  it("ignores .env and all .env variants but keeps .env.example in the context", () => {
+    const content = readFileSync(dockerignorePath, "utf8");
+    expect(content).toMatch(/(^|\n)\.env(\n|$)/);
+    expect(content).toMatch(/(^|\n)\.env\.\*(\n|$)/);
+    expect(content).toMatch(/(^|\n)!\.env\.example(\n|$)/);
+  });
 });

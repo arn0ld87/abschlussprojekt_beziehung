@@ -56,6 +56,13 @@ describe("docker-compose.yml contract (M0 #20 docker compose for app and postgre
     );
   });
 
+  it("escapes postgres healthcheck variables so they expand inside the container, not via compose interpolation", () => {
+    const pgTest = (compose.services.postgres?.healthcheck?.test ?? []).join(" ");
+    expect(pgTest).toMatch(/\$\${POSTGRES_USER}/);
+    expect(pgTest).toMatch(/\$\${POSTGRES_DB}/);
+    expect(pgTest).not.toMatch(/(^|[^$])\$\{POSTGRES_USER:-[^}]+\}/);
+  });
+
   it("configures an app healthcheck that probes the app http health endpoint", () => {
     const appHealthcheck = compose.services.app?.healthcheck;
     expect(appHealthcheck).toBeDefined();
