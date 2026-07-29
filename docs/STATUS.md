@@ -2,7 +2,7 @@
 
 **Stand:** 29.07.2026<br>
 **Phase:** M0 — Foundation abgeschlossen (29.07.2026, formale Schließung erfolgt); M1 — Klassen ist die aktuelle Frontier<br>
-**Produktcode:** Auth-Grundlage (M1 #42) und Klassenverwaltung (M1 #43) vorhanden
+**Produktcode:** Auth-Grundlage (M1 #42), Klassenverwaltung (M1 #43), Schülerprofile und Sitzregeln (M1 #44), persistenter Foto-Upload (M1 #45) und CSV-Import für Klassenlisten (M1 #46) vorhanden
 
 ## Verifiziert vorhanden
 
@@ -19,10 +19,12 @@
 - Designsystem-Grundlage mit Tokens, Basis-Komponenten und Playground-Seite (M0 #21)
 - Auth-Grundlage mit E-Mail/Passwort, Session-Verwaltung, Drizzle-Migration und geschützter Beispielseite (M1 #42)
 - Klassenverwaltung mit CRUD, Soft-Delete, Zod-Validierung, framework-freiem KlassenService, Route Handlern und UI-Seiten (M1 #43)
+- Schülerprofile mit allen Produktfeldern und strukturierten Sitzregeln (`front_seat`, `quiet_area`, `near_to`, `away_from`; hart/gewichtet) inklusive Soft-Delete, Ownership-Prüfung und Property-Tests (M1 #44, Merge `0ad3d0b`)
+- persistenter Foto-Upload mit Metadaten-Tabelle, UUIDv4-Dateinamen, Größen- und MIME-Validierung sowie Docker-Volume `sitzplan_uploads` (M1 #45, PR [#65](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/65), Merge `2518ef4`)
+- CSV-Import für Klassenlisten mit Vorschau, zeilenweisen Fehlern, Bestätigungspflicht und Duplikatstrategie `skip | update | duplicate` (M1 #46, PR [#68](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/68), Merge `1e0a96c`)
 
 ## Noch nicht vorhanden
 
-- Schülerprofile, Sitzregeln, Foto-Upload, CSV-Import
 - Raumvorlagen und Sitzplan-Editor
 - Release-Artefakt
 
@@ -44,14 +46,14 @@ Der GitHub-Milestone [`M0 — Foundation`](https://github.com/arn0ld87/abschluss
 
 ## Nächster Freigabepunkt
 
-Die einzige aktuelle Frontier ist [M1 — Klassen](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3). Das Parent-Issue wird vor Umsetzung über `/to-tickets` in ausführbare Child-Slices zerlegt; es ist selbst nicht `ready-for-agent`.
+Alle fünf M1-Child-Slices (#42–#46) sind gemergt; die Issues #44 und #46 stehen vor der formalen Schließung, das Parent-Issue [#3](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) bleibt bis zum M1-Abschluss offen. Die nächste fachliche Frontier ist [M2 — Raumeditor](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4): M2 ist fachlich startbar, und [#49](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/49) wird freigegeben, sobald der GitHub-Milestone `M2 — Raumeditor` angelegt und die Slices #49–#55 zugeordnet sind (siehe `docs/superpowers/specs/2026-07-29-m2-m3-ticketing-design.md`).
 
 ## Milestone-Frontier
 
 | Milestone | Parent-Issue | Status |
 |---|---|---|
 | M0 | [#2 Foundation: Repository und Agentenworkflow](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/2) | abgeschlossen (29.07.2026, Milestone und Issues formal geschlossen) |
-| M1 | [#3 Klassen: Auth, Klassen und Schülerprofile](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) | einzige aktuelle Frontier |
+| M1 | [#3 Klassen: Auth, Klassen und Schülerprofile](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) | alle Child-Slices (#42–#46) gemergt; formale Schließung ausstehend |
 | M2 | [#4 Raumeditor: Maße, Möbel und Sitzplätze](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) | keine offenen Blocker, Reihenfolge nach M1 |
 | M3 | [#5 Persistente Pläne: Autosave, Versionen und Restore](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) | blockiert durch M1 und M2 |
 | M4 | [#6 Optimierer: Regeln, Konflikte und reproduzierbare Vorschläge](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/6) | blockiert durch M3 |
