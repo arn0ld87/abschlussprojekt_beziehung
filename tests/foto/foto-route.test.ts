@@ -12,34 +12,37 @@ import { InMemoryKlassenRepository } from "../../src/infrastructure/db/in-memory
 import { SchuelerService } from "../../src/domain/schueler";
 import { InMemorySchuelerRepository } from "../../src/infrastructure/db/in-memory-schueler-repository";
 import { FotoService } from "../../src/domain/foto/foto-service";
+import { Foto } from "../../src/domain/foto/foto-model";
+import { FotoRepositoryPort } from "../../src/domain/foto/foto-repository-port";
+import { DateiPort } from "../../src/domain/foto/datei-port";
 import { User } from "../../src/domain/auth";
 
-class InMemoryFotoRepo {
-  private store = new Map<string, any>();
-  async findBySchuelerId(sid: string) {
+class InMemoryFotoRepo implements FotoRepositoryPort {
+  private store = new Map<string, Foto>();
+  async findBySchuelerId(sid: string): Promise<Foto | null> {
     return this.store.get(sid) || null;
   }
-  async create(foto: any) {
+  async create(foto: Foto): Promise<Foto> {
     this.store.set(foto.schuelerId, foto);
     return foto;
   }
-  async deleteBySchuelerId(sid: string) {
+  async deleteBySchuelerId(sid: string): Promise<void> {
     this.store.delete(sid);
   }
 }
 
-class InMemoryDateiPort {
+class InMemoryDateiPort implements DateiPort {
   private store = new Map<string, Buffer>();
-  async speichere(sid: string, file: File) {
+  async speichere(sid: string, file: File): Promise<string> {
     const pfad = `uploads/${sid}-${file.name}`;
     const arrayBuffer = await file.arrayBuffer();
     this.store.set(pfad, Buffer.from(arrayBuffer));
     return pfad;
   }
-  async loesche(pfad: string) {
+  async loesche(pfad: string): Promise<void> {
     this.store.delete(pfad);
   }
-  async lese(pfad: string) {
+  async lese(pfad: string): Promise<Buffer | null> {
     return this.store.get(pfad) || null;
   }
 }
@@ -60,7 +63,7 @@ describe("Foto Route Handlers Integration", () => {
     schuelerService = new SchuelerService(new InMemorySchuelerRepository(), klassenService);
     setGlobalSchuelerService(schuelerService);
 
-    fotoService = new FotoService(new InMemoryFotoRepo() as any, new InMemoryDateiPort() as any);
+    fotoService = new FotoService(new InMemoryFotoRepo(), new InMemoryDateiPort());
     setGlobalFotoService(fotoService);
 
     authRepo = new InMemoryAuthRepository();
