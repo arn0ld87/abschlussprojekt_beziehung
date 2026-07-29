@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { requireUser, handleKlasseError } from '../../route-helpers';
-import { getDefaultCsvImportService } from '../../../../../src/services/csv-import';
-import { getDefaultKlassenService } from '../../../../../src/services/klasse';
+import { requireUser, handleKlasseError } from '../../../route-helpers';
+import { getDefaultCsvImportService } from '@/services/csv-import';
+import { getDefaultKlassenService } from '@/services/klasse';
 
 export const dynamic = 'force-dynamic';
 
