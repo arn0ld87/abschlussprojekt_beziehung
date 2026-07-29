@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import { listRoutes, getMeta, type RouteStatus } from "./route-meta";
 
 // Dev-Übersicht zur Laufzeit: scannt app/ nach page.tsx/route.ts.
@@ -122,7 +123,7 @@ export default function HomePage() {
         <h2 style={{ fontSize: "1.1rem", marginTop: 0 }}>Hinweis</h2>
         <p style={{ color: "#555", marginTop: "0.5rem", lineHeight: 1.5 }}>
           Dev-Helper (Throwaway). Dynamische Routes wie <code>/klassen/[id]</code> brauchen eine
-          echte ID — am besten über <a href="/klassen" style={{ color: "#1d4ed8" }}>/klassen</a>{" "}
+          echte ID — am besten über <Link href="/klassen" style={{ color: "#1d4ed8" }}>/klassen</Link>{" "}
           navigieren. Die Liste wird zur Laufzeit aus dem Dateisystem erzeugt; Status-Badges aus{" "}
           <code>route-meta.ts</code> (Coverage-Test erzwingt Pflege).
         </p>

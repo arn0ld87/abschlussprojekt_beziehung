@@ -5,6 +5,7 @@ import Markierung from '../../../../../src/ui/Markierung';
 import Button from '../../../../../src/ui/Button';
 import SchuelerFormular from './SchuelerFormular';
 import SitzregelEditor from './SitzregelEditor';
+import CsvImportModal from './CsvImportModal';
 
 export interface SchuelerData {
   id: string;
@@ -38,6 +39,7 @@ export default function SchuelerListe({ klasseId }: { klasseId: string }) {
   const [editingSchueler, setEditingSchueler] = useState<SchuelerData | null | 'new'>(null);
   const [managingSitzregelnSchueler, setManagingSitzregelnSchueler] = useState<SchuelerData | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -98,9 +100,14 @@ export default function SchuelerListe({ klasseId }: { klasseId: string }) {
     <div style={{ marginTop: '2rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <h3>Schülerinnen & Schüler ({schuelerList.length})</h3>
-        <Button variant="primary" onClick={() => setEditingSchueler('new')}>
-          + Schüler hinzufügen
-        </Button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Button variant="ghost" onClick={() => setIsImportModalOpen(true)}>
+            CSV Import
+          </Button>
+          <Button variant="primary" onClick={() => setEditingSchueler('new')}>
+            + Schüler hinzufügen
+          </Button>
+        </div>
       </div>
 
       {loading && <p>Lade Schülerliste...</p>}
@@ -172,6 +179,17 @@ export default function SchuelerListe({ klasseId }: { klasseId: string }) {
           allSchueler={schuelerList}
           onClose={() => setManagingSitzregelnSchueler(null)}
           onUpdated={fetchSchueler}
+        />
+      )}
+
+      {isImportModalOpen && (
+        <CsvImportModal
+          klasseId={klasseId}
+          onClose={() => setIsImportModalOpen(false)}
+          onSaved={() => {
+            setIsImportModalOpen(false);
+            fetchSchueler();
+          }}
         />
       )}
     </div>
