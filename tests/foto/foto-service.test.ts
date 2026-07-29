@@ -5,6 +5,7 @@ describe("FotoService", () => {
   const mockRepo = {
     findBySchuelerId: vi.fn(),
     create: vi.fn(),
+    updateBySchuelerId: vi.fn(),
     deleteBySchuelerId: vi.fn().mockResolvedValue(undefined),
   };
 
@@ -91,22 +92,27 @@ describe("FotoService", () => {
     const first = await service.uploadFoto("schueler_1", file1);
     expect(first.id).toBe("fot_1");
 
-    // 2) Replace-Versuch bei dem die DB-Persistierung scheitert.
-    //    Erwartet: neue Datei wird kompensiert (geloescht), keine alte Datei wird
-    //    ueberschrieben.
+    // 2) Replace-Versuch bei dem das DB-Update scheitert.
+    //    Erwartet: neue Datei wird kompensiert (geloescht), die alte Datei
+    //    bleibt unangetastet. Ein zweiter Insert wuerde den Unique-Constraint
+    //    verletzen — daher wird beim Replace updateBySchuelerId verwendet.
     mockRepo.findBySchuelerId.mockResolvedValueOnce(first);
     mockDateiPort.speichere.mockResolvedValueOnce("uuid-2.jpg");
-    mockRepo.create.mockRejectedValueOnce(new Error("db-down"));
+    mockRepo.updateBySchuelerId.mockRejectedValueOnce(new Error("db-down"));
 
     await expect(service.uploadFoto("schueler_1", file2)).rejects.toThrow("db-down");
 
+    // Replace verwendet updateBySchuelerId — kein zweiter Insert.
+    expect(mockRepo.create).toHaveBeenCalledTimes(1);
+    expect(mockRepo.updateBySchuelerId).toHaveBeenCalledTimes(1);
+    expect(mockRepo.updateBySchuelerId).toHaveBeenCalledWith("schueler_1", expect.objectContaining({ internerDateiname: "uuid-2.jpg" }));
     // Kompensation: die NEUE Datei muss geloescht worden sein.
     expect(mockDateiPort.loesche).toHaveBeenCalledWith("uuid-2.jpg");
     // Die ALTE Datei darf NICHT geloescht worden sein.
     expect(mockDateiPort.loesche).not.toHaveBeenCalledWith("uuid-1.jpg");
   });
 
-  it("deletes existing file after successful replace", async () => {
+  it("deletes existing file after successful replace and keeps the foto id stable", async () => {
     const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0xcc]);
     const jpeg2 = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0xdd]);
     const file1 = new File([jpeg], "first.jpg", { type: "image/jpeg" });
@@ -125,7 +131,7 @@ describe("FotoService", () => {
     });
     await service.uploadFoto("schueler_1", file1);
 
-    mockRepo.findBySchuelerId.mockResolvedValueOnce({
+    const bestehend = {
       id: "fot_A",
       schuelerId: "schueler_1",
       internerDateiname: "uuid-A.jpg",
@@ -133,19 +139,22 @@ describe("FotoService", () => {
       byteSize: jpeg.byteLength,
       createdAt: new Date(),
       updatedAt: new Date(),
-    });
+    };
+    mockRepo.findBySchuelerId.mockResolvedValueOnce(bestehend);
     mockDateiPort.speichere.mockResolvedValueOnce("uuid-B.jpg");
-    mockRepo.create.mockResolvedValueOnce({
-      id: "fot_B",
-      schuelerId: "schueler_1",
+    mockRepo.updateBySchuelerId.mockResolvedValueOnce({
+      ...bestehend,
       internerDateiname: "uuid-B.jpg",
       mimeType: "image/jpeg",
       byteSize: jpeg2.byteLength,
-      createdAt: new Date(),
       updatedAt: new Date(),
     });
     const second = await service.uploadFoto("schueler_1", file2);
-    expect(second.id).toBe("fot_B");
+    // Replace aktualisiert die vorhandene Zeile — die Foto-ID bleibt stabil.
+    expect(second.id).toBe("fot_A");
+    expect(second.internerDateiname).toBe("uuid-B.jpg");
+    expect(mockRepo.create).toHaveBeenCalledTimes(1);
+    expect(mockRepo.updateBySchuelerId).toHaveBeenCalledTimes(1);
 
     // Die alte Datei wird erst NACH erfolgreichem Replace geloescht.
     expect(mockDateiPort.loesche).toHaveBeenCalledWith("uuid-A.jpg");

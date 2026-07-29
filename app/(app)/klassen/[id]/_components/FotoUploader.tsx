@@ -25,12 +25,22 @@ export function FotoUploader({ klasseId, schuelerId, fotoUrl }: FotoUploaderProp
 
   const [state, setState] = useState<UploadState>({ kind: "idle" });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  // Serverseitige Foto-Existenz wird durch Laden des <img> aufgeloest: eine
+  // 404 (kein Foto hinterlegt) triggert onError. So vermeiden wir kaputte
+  // Bilder und falsch angezeigte Replace-/Delete-Controls, wenn noch kein
+  // Foto existiert.
+  const [fotoVorhanden, setFotoVorhanden] = useState(false);
+
+  // Bei Wechsel der fotoUrl laedt das <img> neu; onLoad/onError syncs
+  // fotoVorhanden automatisch. Ein zusaetzlicher Effect ist nicht noetig.
 
   const isUploading = state.kind === "uploading";
   const errorMessage = state.kind === "error" ? state.message : null;
+  const hatFoto = fotoVorhanden || !!previewUrl;
+  const displayedUrl = previewUrl ?? fotoUrl;
   const statusMessage = isUploading
     ? "Foto wird hochgeladen"
-    : fotoUrl || previewUrl
+    : hatFoto
     ? "Foto vorhanden"
     : "Kein Foto hinterlegt";
 
@@ -88,6 +98,11 @@ export function FotoUploader({ klasseId, schuelerId, fotoUrl }: FotoUploaderProp
         return;
       }
 
+      // Server hat das Foto persistiert — Existenz bestätigt, lokale Vorschau
+      // verwerfen, damit das serverseitige Bild angezeigt wird.
+      URL.revokeObjectURL(objectUrl);
+      setPreviewUrl(null);
+      setFotoVorhanden(true);
       setState({ kind: "idle" });
       router.refresh();
     } catch {
@@ -122,14 +137,13 @@ export function FotoUploader({ klasseId, schuelerId, fotoUrl }: FotoUploaderProp
 
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
+      setFotoVorhanden(false);
       setState({ kind: "idle" });
       router.refresh();
     } catch {
       setState({ kind: "error", message: "Netzwerkfehler beim Loeschen." });
     }
   };
-
-  const displayedUrl = previewUrl ?? fotoUrl;
 
   return (
     <div className="flex flex-col gap-3">
@@ -156,10 +170,22 @@ export function FotoUploader({ klasseId, schuelerId, fotoUrl }: FotoUploaderProp
             <img
               src={displayedUrl}
               alt={`Foto von Schuelerprofil ${schuelerId}`}
-              className="w-full h-full object-cover rounded-full border border-gray-200"
+              onLoad={() => setFotoVorhanden(true)}
+              onError={() => setFotoVorhanden(false)}
+              className={`w-full h-full object-cover rounded-full border border-gray-200 transition-opacity ${
+                hatFoto ? "opacity-100" : "opacity-0"
+              }`}
               width={128}
               height={128}
             />
+            {!hatFoto && (
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 text-sm"
+              >
+                Kein Foto
+              </div>
+            )}
           </div>
         ) : (
           <div
@@ -180,7 +206,7 @@ export function FotoUploader({ klasseId, schuelerId, fotoUrl }: FotoUploaderProp
               : "bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           }`}
         >
-          {isUploading ? "Laedt…" : displayedUrl ? "Foto ersetzen" : "Foto hochladen"}
+          {isUploading ? "Laedt…" : hatFoto ? "Foto ersetzen" : "Foto hochladen"}
           <input
             id={inputId}
             ref={inputRef}
@@ -196,7 +222,7 @@ export function FotoUploader({ klasseId, schuelerId, fotoUrl }: FotoUploaderProp
           Erlaubte Formate: JPEG, PNG oder WebP. Maximale Groesse 5 Megabyte.
         </span>
 
-        {displayedUrl && (
+        {hatFoto && (
           <button
             type="button"
             onClick={handleDelete}

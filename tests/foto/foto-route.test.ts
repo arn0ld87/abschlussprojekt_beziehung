@@ -26,6 +26,21 @@ class InMemoryFotoRepo implements FotoRepositoryPort {
     this.store.set(foto.schuelerId, foto);
     return foto;
   }
+  async updateBySchuelerId(sid: string, aenderungen: { internerDateiname: string; mimeType: string; byteSize: number; updatedAt: Date }): Promise<Foto> {
+    const existing = this.store.get(sid);
+    if (!existing) {
+      throw new Error(`Kein Foto-Eintrag fuer schuelerId ${sid} zum Update gefunden.`);
+    }
+    const updated: Foto = {
+      ...existing,
+      internerDateiname: aenderungen.internerDateiname,
+      mimeType: aenderungen.mimeType as Foto["mimeType"],
+      byteSize: aenderungen.byteSize,
+      updatedAt: aenderungen.updatedAt,
+    };
+    this.store.set(sid, updated);
+    return updated;
+  }
   async deleteBySchuelerId(sid: string): Promise<void> {
     this.store.delete(sid);
   }

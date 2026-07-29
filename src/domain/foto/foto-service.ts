@@ -67,10 +67,40 @@ export class FotoService {
     // 4. Neuen Speicherpfad erzeugen BEVOR wir alte Dateien loeschen.
     const neuerPfad = await this.dateiPort.speichere(schuelerId, datei);
 
-    // 5. Bestehendes Foto ermitteln — fuer Kompensation bei Fehlschlag.
+    // 5. Bestehendes Foto ermitteln — Replace vs. Neu-Anlage.
     const existierendesFoto = await this.repository.findBySchuelerId(schuelerId);
 
-    // 6. Kompensation: Wenn der DB-Insert fehlschlaegt, neue Datei wieder loeschen.
+    let persistiert: Foto;
+    if (existierendesFoto) {
+      // Replace: den bestehenden Metadaten-Satz atomar auf die neue Datei
+      // umbiegen. Ein zweiter Insert wuerde den Unique-Constraint auf
+      // schueler_id verletzen; daher updaten wir die vorhandene Zeile.
+      // Schlaegt das Update fehl, kompensieren wir die neue Datei und lassen
+      // das alte Foto unangetastet.
+      try {
+        persistiert = await this.repository.updateBySchuelerId(schuelerId, {
+          internerDateiname: neuerPfad,
+          mimeType: datei.type,
+          byteSize: datei.size,
+          updatedAt: new Date(),
+        });
+      } catch (err) {
+        await this.dateiPort.loesche(neuerPfad).catch(() => undefined);
+        throw new FotoServiceError(
+          "UPLOAD_ERROR",
+          err instanceof Error ? err.message : "Persistierung fehlgeschlagen."
+        );
+      }
+      // Erst NACH erfolgreichem Update die alte Datei loeschen
+      // (Replace-Compensation). Schlägt das Löschen fehl, bleibt die alte
+      // Datei liegen — die DB referenziert nur noch die neue Datei.
+      await this.dateiPort
+        .loesche(existierendesFoto.internerDateiname)
+        .catch(() => undefined);
+      return persistiert;
+    }
+
+    // 6. Neu-Anlage: Insert. Kompensation, wenn der DB-Insert fehlschlaegt.
     let neuesFoto: Foto;
     try {
       neuesFoto = FotoSchema.parse({
@@ -90,7 +120,6 @@ export class FotoService {
       );
     }
 
-    let persistiert: Foto;
     try {
       persistiert = await this.repository.create(neuesFoto);
     } catch (err) {
@@ -99,16 +128,6 @@ export class FotoService {
         "UPLOAD_ERROR",
         err instanceof Error ? err.message : "Persistierung fehlgeschlagen."
       );
-    }
-
-    // 7. Erst NACH erfolgreichem Insert alte Datei loeschen (Replace-Compensation).
-    //    Wenn das Loeschen scheitert, bleibt die alte Datei liegen; das ist
-    //    akzeptabel, weil die DB keine Referenz mehr darauf haelt.
-    if (existierendesFoto) {
-      await this.dateiPort.loesche(existierendesFoto.internerDateiname).catch(() => undefined);
-      await this.repository
-        .deleteBySchuelerId(schuelerId)
-        .catch(() => undefined);
     }
 
     return persistiert;

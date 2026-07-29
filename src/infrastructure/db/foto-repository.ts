@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import type { FotoRepositoryPort } from "../../domain/foto/foto-repository-port";
+import type { FotoAenderungen, FotoRepositoryPort } from "../../domain/foto/foto-repository-port";
 import { FotoSchema, type Foto } from "../../domain/foto/foto-model";
 import { getDb } from "./client";
 import { fotos } from "./schema";
@@ -47,6 +47,25 @@ export class FotoRepository implements FotoRepositoryPort {
         deletedAt: foto.deletedAt ?? null,
       })
       .returning();
+    return toFoto(result[0]);
+  }
+
+  async updateBySchuelerId(schuelerId: string, aenderungen: FotoAenderungen): Promise<Foto> {
+    const result = await getDb()
+      .update(fotos)
+      .set({
+        internerDateiname: aenderungen.internerDateiname,
+        mimeType: aenderungen.mimeType,
+        byteSize: aenderungen.byteSize,
+        updatedAt: aenderungen.updatedAt,
+      })
+      .where(eq(fotos.schuelerId, schuelerId))
+      .returning();
+    if (result.length === 0) {
+      throw new Error(
+        `Kein Foto-Eintrag fuer schuelerId ${schuelerId} zum Update gefunden.`
+      );
+    }
     return toFoto(result[0]);
   }
 
