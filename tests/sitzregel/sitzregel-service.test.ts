@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SchuelerService } from '../../src/domain/schueler';
-import { SitzregelService, SitzregelError } from '../../src/domain/sitzregel';
+import { SitzregelService } from '../../src/domain/sitzregel';
 import { KlassenService } from '../../src/domain/klasse';
 import { InMemoryKlassenRepository } from '../../src/infrastructure/db/in-memory-klassen-repository';
 import { InMemorySchuelerRepository } from '../../src/infrastructure/db/in-memory-schueler-repository';
