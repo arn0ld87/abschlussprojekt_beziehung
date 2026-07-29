@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { doublePrecision, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -87,3 +87,48 @@ export const klassen = pgTable("klassen", {
 }, (table) => ({
   userIdIdx: index("klassen_user_id_idx").on(table.userId),
 }));
+
+export const schueler = pgTable("schueler", {
+  id: text("id").primaryKey(),
+  klasseId: text("klasse_id").notNull().references(() => klassen.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  initialen: text("initialen").notNull(),
+  farbe: text("farbe").notNull(),
+  lernstand: text("lernstand"),
+  verhalten: text("verhalten"),
+  freitextnotizen: text("freitextnotizen"),
+  fotoPlaceholderId: text("foto_placeholder_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (table) => ({
+  klasseIdIdx: index("schueler_klasse_id_idx").on(table.klasseId),
+}));
+
+export const sitzregeln = pgTable("sitzregeln", {
+  id: text("id").primaryKey(),
+  schuelerId: text("schueler_id").notNull().references(() => schueler.id, { onDelete: "cascade" }),
+  klasseId: text("klasse_id").notNull().references(() => klassen.id, { onDelete: "cascade" }),
+  typ: text("typ").notNull(),
+  targetSchuelerId: text("target_schueler_id").references(() => schueler.id, { onDelete: "cascade" }),
+  haerte: text("haerte").notNull(),
+  gewicht: doublePrecision("gewicht"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  schuelerIdIdx: index("sitzregeln_schueler_id_idx").on(table.schuelerId),
+  klasseIdIdx: index("sitzregeln_klasse_id_idx").on(table.klasseId),
+}));
+
+export const fotos = pgTable("fotos", {
+  id: text("id").primaryKey(),
+  schuelerId: text("schueler_id").notNull().unique().references(() => schueler.id, { onDelete: "cascade" }),
+  internerDateiname: text("interner_dateiname").notNull(),
+  mimeType: text("mime_type").notNull(),
+  byteSize: integer("byte_size").notNull(),
+  breitePx: integer("breite_px"),
+  hoehePx: integer("hoehe_px"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
