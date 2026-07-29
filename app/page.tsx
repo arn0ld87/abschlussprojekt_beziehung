@@ -50,7 +50,7 @@ export default function HomePage() {
 
   return (
     <main style={{ maxWidth: "880px", margin: "0 auto", padding: "2rem 1.5rem" }}>
-      <h1>Abschlussprojekt Beziehung — M0 Foundation</h1>
+      <h1>Abschlussprojekt Beziehung — Dev-Übersicht</h1>
       <p style={{ color: "#555" }}>
         Live aus <code>app/</code> gescannt — {pages.length} Seiten, {apis.length} API-Routes im
         aktuellen Stand. Status: 🟢 geht · 🟡 Login nötig · 🔴 geplant / fehlt.
@@ -65,7 +65,7 @@ export default function HomePage() {
             return (
               <div key={r.path} style={cardStyle}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                  <Link
+                  <a
                     href={hrefFor(r.path)}
                     style={{
                       fontFamily: "ui-monospace, SFMono-Regular, monospace",
@@ -75,7 +75,7 @@ export default function HomePage() {
                     }}
                   >
                     {r.path}
-                  </Link>
+                  </a>
                   <span style={badgeStyle(b.color)}>
                     {b.emoji} {b.text}
                   </span>
@@ -120,14 +120,7 @@ export default function HomePage() {
       </section>
 
       <section style={{ marginTop: "1.75rem", ...cardStyle }}>
-        <h2 style={{ fontSize: "1.1rem", marginTop: 0 }}>Info</h2>
-        <p style={{ color: "#555", marginTop: "0.5rem", lineHeight: 1.5 }}>
-          Stack: Next.js 16 (App Router) + TypeScript strict + Vitest.
-          <br/>
-          Nächster Meilenstein: M1 Klassen (Issue #3).
-          <br/>
-          Module: <code>src/domain</code>, <code>src/services</code>, <code>src/infrastructure</code>.
-        </p>
+        <h2 style={{ fontSize: "1.1rem", marginTop: 0 }}>Hinweis</h2>
         <p style={{ color: "#555", marginTop: "0.5rem", lineHeight: 1.5 }}>
           Dev-Helper (Throwaway). Dynamische Routes wie <code>/klassen/[id]</code> brauchen eine
           echte ID — am besten über <Link href="/klassen" style={{ color: "#1d4ed8" }}>/klassen</Link>{" "}
