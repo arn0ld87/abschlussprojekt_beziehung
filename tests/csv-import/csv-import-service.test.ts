@@ -34,11 +34,11 @@ describe('CsvImportService', () => {
   it('commits csv data', async () => {
     const csv = `Name,Initialen,Sitzregeln\nMax Mustermann,MM,front_seat`;
     const result = await csvImportService.commit('user1', 'kl1', csv, 'skip');
-    
+
     expect(result.successCount).toBe(1);
     const list = await schuelerService.list('user1', 'kl1');
     expect(list).toHaveLength(1);
-    
+
     const regeln = await sitzregelService.listForSchueler('user1', 'kl1', list[0].id);
     expect(regeln).toHaveLength(1);
     expect(regeln[0].typ).toBe('front_seat');

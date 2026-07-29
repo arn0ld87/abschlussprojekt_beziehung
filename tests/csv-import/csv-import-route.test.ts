@@ -25,16 +25,16 @@ describe('CSV Import Routes', () => {
 
   beforeEach(async () => {
     currentSessionToken = '';
-    
+
     klassenService = new KlassenService(new InMemoryKlassenRepository());
     setGlobalKlassenService(klassenService);
-    
+
     const schuelerService = new SchuelerService(new InMemorySchuelerRepository(), klassenService);
     setGlobalSchuelerService(schuelerService);
-    
+
     const sitzregelService = new SitzregelService(new InMemorySitzregelRepository(), schuelerService, klassenService);
     setGlobalSitzregelService(sitzregelService);
-    
+
     const csvImportService = new CsvImportService(schuelerService, sitzregelService);
     setGlobalCsvImportService(csvImportService);
 

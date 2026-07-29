@@ -98,7 +98,7 @@ export default function CsvImportModal({
         }}
       >
         <h3 style={{ marginTop: 0 }}>CSV Import</h3>
-        
+
         {error && (
           <div style={{ color: 'red', marginBottom: '1rem' }}>{error}</div>
         )}
@@ -109,7 +109,10 @@ export default function CsvImportModal({
           </label>
           <textarea
             value={csvText}
-            onChange={(e) => setCsvText(e.target.value)}
+            onChange={(e) => {
+              setCsvText(e.target.value);
+              setPreview(null);
+            }}
             style={{ width: '100%', height: '150px', padding: '0.5rem' }}
             disabled={loading}
           />
@@ -137,7 +140,7 @@ export default function CsvImportModal({
             <ul style={{ paddingLeft: '1.5rem', fontSize: '0.9rem' }}>
               {preview.previewRows.map((r, i) => (
                 <li key={i} style={{ marginBottom: '0.5rem' }}>
-                  <strong>{r.schueler?.name || 'Kein Name'}</strong> 
+                  <strong>{r.schueler?.name || 'Kein Name'}</strong>
                   {r.errors.length > 0 && (
                     <span style={{ color: 'red', marginLeft: '0.5rem' }}>
                       (Fehler: {r.errors.join(', ')})

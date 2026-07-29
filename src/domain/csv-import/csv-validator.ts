@@ -10,7 +10,7 @@ export type CsvImportRowResult = {
 
 export function validateCsvRow(row: Record<string, string>): CsvImportRowResult {
   const errors: string[] = [];
-  
+
   const schuelerInput: Record<string, string | undefined> = {
     name: row['Name'] || row['name'] || '',
     initialen: row['Initialen'] || row['initialen'] || undefined,
@@ -19,14 +19,14 @@ export function validateCsvRow(row: Record<string, string>): CsvImportRowResult 
     verhalten: row['Verhalten'] || row['verhalten'] || undefined,
     freitextnotizen: row['Freitextnotizen'] || row['freitextnotizen'] || row['Notizen'] || undefined,
   };
-  
+
   Object.keys(schuelerInput).forEach((key) => {
     if (schuelerInput[key] === '') schuelerInput[key] = undefined;
   });
 
   const parsedSchueler = CreateSchuelerInputSchema.safeParse(schuelerInput);
   let schueler: CreateSchuelerInput | null = null;
-  
+
   if (parsedSchueler.success) {
     schueler = parsedSchueler.data;
   } else {
@@ -43,10 +43,12 @@ export function validateCsvRow(row: Record<string, string>): CsvImportRowResult 
       if (part === 'front_seat' || part === 'quiet_area') {
         const parsedSr = CreateSitzregelInputSchema.safeParse({ typ: part, haerte: 'hard' });
         if (parsedSr.success) {
-            sitzregeln.push(parsedSr.data as CreateSitzregelInput);
+          sitzregeln.push(parsedSr.data as CreateSitzregelInput);
         } else {
-            errors.push(`Sitzregel ungültig: ${part}`);
+          errors.push(`Sitzregel ungültig: ${part}`);
         }
+      } else {
+        errors.push(`Sitzregel unbekannt: ${part}`);
       }
     }
   }

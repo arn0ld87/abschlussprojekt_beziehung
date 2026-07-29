@@ -28,7 +28,7 @@ export class CsvImportService {
     const parsed = parseCsv(csvText);
     const totalRows = parsed.length;
     const previewRows = parsed.slice(0, previewCount).map(validateCsvRow);
-    
+
     return {
       totalRows,
       previewRows,
@@ -36,22 +36,26 @@ export class CsvImportService {
   }
 
   public async commit(
-    userId: string, 
-    klasseId: string, 
-    csvText: string, 
+    userId: string,
+    klasseId: string,
+    csvText: string,
     strategy: DuplicateStrategy
   ): Promise<CsvImportCommitResult> {
     const parsed = parseCsv(csvText);
     const validated = parsed.map(validateCsvRow);
-    
+
     let successCount = 0;
     let skipCount = 0;
     let updateCount = 0;
     let errorCount = 0;
     const errors: string[] = [];
-    
+
     const existingSchueler = await this.schuelerService.list(userId, klasseId);
-    
+    const freshlyCreated: { id: string; name: string }[] = [];
+    const findExisting = (name: string) =>
+      freshlyCreated.find((s) => s.name === name) ??
+      existingSchueler.find((s) => s.name === name);
+
     for (let i = 0; i < validated.length; i++) {
       const row = validated[i];
       if (row.errors.length > 0) {
@@ -59,18 +63,19 @@ export class CsvImportService {
         errors.push(`Zeile ${i + 1}: ${row.errors.join(', ')}`);
         continue;
       }
-      
+
       if (!row.schueler) {
         errorCount++;
         errors.push(`Zeile ${i + 1}: Schüler-Daten fehlen.`);
         continue;
       }
-      
-      const existing = existingSchueler.find(s => s.name === row.schueler!.name);
-      
+
+      const existing = findExisting(row.schueler.name);
+
       try {
         let schuelerId: string | null = null;
-        
+        let createdName: string | null = null;
+
         if (existing) {
           if (strategy === 'skip') {
             skipCount++;
@@ -82,29 +87,36 @@ export class CsvImportService {
           } else if (strategy === 'duplicate') {
             const created = await this.schuelerService.create(userId, klasseId, row.schueler);
             schuelerId = created.id;
+            createdName = created.name;
             successCount++;
           }
         } else {
           const created = await this.schuelerService.create(userId, klasseId, row.schueler);
           schuelerId = created.id;
+          createdName = created.name;
           successCount++;
         }
-        
+
+        if (createdName) {
+          freshlyCreated.push({ id: schuelerId!, name: createdName });
+        }
+
         if (schuelerId && row.sitzregeln && row.sitzregeln.length > 0) {
-           for (const sr of row.sitzregeln) {
-             try {
-               await this.sitzregelService.create(userId, klasseId, schuelerId, sr);
-             } catch (e: unknown) {
-               errors.push(`Zeile ${i + 1} (Sitzregel): ${e instanceof Error ? e.message : 'Fehler'}`);
-             }
-           }
+          for (const sr of row.sitzregeln) {
+            try {
+              await this.sitzregelService.create(userId, klasseId, schuelerId, sr);
+            } catch (e: unknown) {
+              errorCount++;
+              errors.push(`Zeile ${i + 1} (Sitzregel): ${e instanceof Error ? e.message : 'Fehler'}`);
+            }
+          }
         }
       } catch (e: unknown) {
         errorCount++;
         errors.push(`Zeile ${i + 1}: ${e instanceof Error ? e.message : 'Fehler'}`);
       }
     }
-    
+
     return { successCount, skipCount, updateCount, errorCount, errors };
   }
 }
