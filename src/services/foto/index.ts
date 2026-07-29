@@ -13,3 +13,7 @@ export function getDefaultFotoService(): FotoService {
   }
   return fotoServiceInstance;
 }
+
+export function setGlobalFotoService(service: FotoService): void {
+  fotoServiceInstance = service;
+}
