@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "../../../../route-helpers";
-import { getDefaultFotoService } from "@/services/foto";
-import { getDefaultSchuelerService } from "@/services/schueler";
+import { getDefaultFotoService } from "../../../../../../src/services/foto";
+import { getDefaultSchuelerService } from "../../../../../../src/services/schueler";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string; sid: string }> }) {
   const { user, response } = await requireUser(req);
