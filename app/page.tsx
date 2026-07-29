@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import { listRoutes, getMeta, type RouteStatus } from "./route-meta";
 
 // Dev-Übersicht zur Laufzeit: scannt app/ nach page.tsx/route.ts.
@@ -42,8 +43,6 @@ const cardStyle: CSSProperties = {
   backgroundColor: "#fff",
 };
 
-import Link from 'next/link';
-
 export default function HomePage() {
   const routes = listRoutes();
   const pages = routes.filter((r) => r.kind === "page");
@@ -66,7 +65,7 @@ export default function HomePage() {
             return (
               <div key={r.path} style={cardStyle}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                  <Link
+                  <a
                     href={hrefFor(r.path)}
                     style={{
                       fontFamily: "ui-monospace, SFMono-Regular, monospace",
@@ -76,7 +75,7 @@ export default function HomePage() {
                     }}
                   >
                     {r.path}
-                  </Link>
+                  </a>
                   <span style={badgeStyle(b.color)}>
                     {b.emoji} {b.text}
                   </span>

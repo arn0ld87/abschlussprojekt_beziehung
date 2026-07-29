@@ -66,7 +66,6 @@ describe('Klassen Routes', () => {
     expect(data[0].name).toBe('K1');
   });
 
-
   it('GET /api/klassen 500 error path', async () => {
     await setSession(mockUser);
     const service = getDefaultKlassenService();
