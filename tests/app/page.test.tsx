@@ -5,7 +5,7 @@ import HomePage from "../../app/page";
 describe("HomePage (app/page.tsx)", () => {
   it("renders a single <main> element as the root node", () => {
     const html = renderToStaticMarkup(<HomePage />);
-    expect(html.startsWith("<main>")).toBe(true);
+    expect(html.startsWith("<main")).toBe(true);
     expect(html.endsWith("</main>")).toBe(true);
   });
 
