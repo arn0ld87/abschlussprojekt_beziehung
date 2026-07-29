@@ -7,6 +7,7 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 ### Added
 
 - Raumvorlagen-Grundlage (M2 #49): Drizzle-Tabelle `raeume` mit Migration `0005_raeume.sql`, versionierter und Konva-freier Zod-Vertrag `RaumDokumentV1` (JSONB, `version: 1`, Maße, Raster, leere Objektliste), framework-freier `RaumService` mit Ownership- und Raster-Validierung, Route Handler unter `/api/raeume` sowie UI `/raeume`, `/raeume/neu` und Editor-Shell `/raeume/[id]` (Editorfläche folgt mit M2 #50)
+- Raum-Canvas (M2 #50): React-Konva-Editorfläche auf `/raeume/[id]` mit Raumgrenze und sichtbarem Raster, framework-freie Koordinatentransformation (`src/domain/raum/koordinaten.ts`) mit exaktem Seitenverhältnis und responsiver Skalierung, Live-Vorschau bei Maß-/Rasteränderungen; neue Runtime-Dependencies `react-konva` und `konva` (ADR-0002)
 
 ## M1 — Klassen — 29.07.2026
 
