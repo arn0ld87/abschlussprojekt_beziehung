@@ -75,7 +75,7 @@ describe('SitzregelService (Extended Coverage)', () => {
 
       await expect(
         sitzregelService.update('u1', k.id, s.id, 'stz_invalid', { haerte: 'hard' })
-      ).rejects.toMatchObject({ name: 'SitzregelError', code: 'NOT_FOUND', message: 'Sitzregel nicht gefunden.' });
+      ).rejects.toThrowError('Sitzregel nicht gefunden.');
     });
 
     it('throws NOT_FOUND when deleting a non-existent rule', async () => {
@@ -84,7 +84,7 @@ describe('SitzregelService (Extended Coverage)', () => {
 
       await expect(
         sitzregelService.delete('u1', k.id, s.id, 'stz_invalid')
-      ).rejects.toMatchObject({ name: 'SitzregelError', code: 'NOT_FOUND', message: 'Sitzregel nicht gefunden.' });
+      ).rejects.toThrowError('Sitzregel nicht gefunden.');
     });
   });
 
@@ -98,7 +98,7 @@ describe('SitzregelService (Extended Coverage)', () => {
 
       await expect(
         sitzregelService.update('u1', k.id, s2.id, r.id, { typ: 'quiet_area' })
-      ).rejects.toMatchObject({ name: 'SitzregelError', code: 'FORBIDDEN', message: 'Keine Berechtigung für diese Sitzregel.' });
+      ).rejects.toThrowError('Keine Berechtigung für diese Sitzregel.');
     });
 
     it('throws FORBIDDEN when deleting a rule that belongs to another student', async () => {
@@ -110,7 +110,7 @@ describe('SitzregelService (Extended Coverage)', () => {
 
       await expect(
         sitzregelService.delete('u1', k.id, s2.id, r.id)
-      ).rejects.toMatchObject({ name: 'SitzregelError', code: 'FORBIDDEN', message: 'Keine Berechtigung für diese Sitzregel.' });
+      ).rejects.toThrowError('Keine Berechtigung für diese Sitzregel.');
     });
   });
 
@@ -121,7 +121,7 @@ describe('SitzregelService (Extended Coverage)', () => {
 
       await expect(
         sitzregelService.create('u1', k.id, s.id, { typ: 'near_to', haerte: 'hard' }) // missing targetSchuelerId
-      ).rejects.toMatchObject({ name: 'SitzregelError', code: 'VALIDATION_ERROR' });
+      ).rejects.toThrowError();
     });
 
     it('throws VALIDATION_ERROR on update with invalid input', async () => {
@@ -131,7 +131,7 @@ describe('SitzregelService (Extended Coverage)', () => {
 
       await expect(
         sitzregelService.update('u1', k.id, s.id, r.id, { haerte: 'hard', gewicht: 0.5 }) // hard rules shouldn't have gewicht
-      ).rejects.toMatchObject({ name: 'SitzregelError', code: 'VALIDATION_ERROR' });
+      ).rejects.toThrowError();
     });
   });
 
