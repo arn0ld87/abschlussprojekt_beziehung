@@ -44,6 +44,12 @@ describe('RaumService', () => {
     await expect(service.create('u1', { ...gueltig, rasterCm: 0 })).rejects.toThrow(RaumError);
   });
 
+  it('lehnt ein Raster unter 1 cm ab (Regression: Rasterdichte-Begrenzung)', async () => {
+    const err = await service.create('u1', { ...gueltig, rasterCm: 0.5 }).catch((e) => e);
+    expect(err).toBeInstanceOf(RaumError);
+    expect(err.code).toBe('VALIDATION_ERROR');
+  });
+
   it('fails creation when raster exceeds the smaller side', async () => {
     await expect(service.create('u1', { ...gueltig, rasterCm: 601 })).rejects.toThrow(RaumError);
     await expect(service.create('u1', { ...gueltig, rasterCm: 600 })).resolves.toBeDefined();

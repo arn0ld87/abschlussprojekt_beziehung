@@ -2,7 +2,30 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Button from '../../../../../src/ui/Button';
+import { MIN_RASTER_CM } from '../../../../../src/domain/raum/koordinaten';
+
+// react-konva braucht den Browser — bewusst ohne SSR geladen (Ladezustand sichtbar).
+const RaumCanvas = dynamic(() => import('./RaumCanvas'), {
+  ssr: false,
+  loading: () => (
+    <div
+      role="status"
+      aria-label="Editorfläche lädt"
+      style={{
+        marginBottom: '2rem',
+        padding: '2rem',
+        border: '1px dashed #9ca3af',
+        borderRadius: '6px',
+        color: '#4b5563',
+        textAlign: 'center',
+      }}
+    >
+      Editorfläche lädt …
+    </div>
+  ),
+});
 
 export interface RaumEditorProps {
   raum: {
@@ -84,22 +107,24 @@ export default function RaumEditor({ raum }: RaumEditorProps) {
   const fieldStyle = { width: '100%', padding: '0.5rem' } as const;
   const labelStyle = { display: 'block', marginBottom: '0.25rem' } as const;
 
+  // Live-Vorschau: gültige Formularwerte steuern den Canvas sofort,
+  // ungültige Eingaben fallen auf den gespeicherten Stand zurück.
+  const parsedBreite = Number(breiteCm);
+  const parsedLaenge = Number(laengeCm);
+  const parsedRaster = Number(rasterCm);
+  const vorschau = {
+    breiteCm: parsedBreite > 0 ? parsedBreite : raum.breiteCm,
+    laengeCm: parsedLaenge > 0 ? parsedLaenge : raum.laengeCm,
+    rasterCm: parsedRaster >= MIN_RASTER_CM ? parsedRaster : raum.rasterCm,
+  };
+
   return (
     <div>
-      <section
-        aria-label="Editorfläche"
-        style={{
-          marginBottom: '2rem',
-          padding: '2rem',
-          border: '1px dashed #9ca3af',
-          borderRadius: '6px',
-          backgroundColor: '#f9fafb',
-          color: '#4b5563',
-          textAlign: 'center',
-        }}
-      >
-        Editorfläche ({raum.breiteCm} × {raum.laengeCm} cm, Raster {raum.rasterCm} cm) — folgt mit M2 #50.
-      </section>
+      <RaumCanvas
+        breiteCm={vorschau.breiteCm}
+        laengeCm={vorschau.laengeCm}
+        rasterCm={vorschau.rasterCm}
+      />
 
       <h3>Raumdaten bearbeiten</h3>
       {error && <p style={{ color: 'red' }}>{error}</p>}

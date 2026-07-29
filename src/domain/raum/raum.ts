@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MIN_RASTER_CM } from './koordinaten';
 
 // RaumDokumentV1 ist der versionierte, framework-freie Canvas-Vertrag
 // (ADR-0003): keine Konva-Nodes, keine React-Typen. Die Objektliste ist
@@ -8,7 +9,7 @@ export const RaumDokumentV1Schema = z.object({
   version: z.literal(1),
   breiteCm: z.number().finite().positive(),
   laengeCm: z.number().finite().positive(),
-  rasterCm: z.number().finite().positive(),
+  rasterCm: z.number().finite().min(MIN_RASTER_CM, `Raster muss mindestens ${MIN_RASTER_CM} cm betragen.`),
   objekte: z.array(z.never()).default([]),
 }).refine(
   (doc) => doc.rasterCm <= Math.min(doc.breiteCm, doc.laengeCm),
@@ -38,11 +39,14 @@ const cmField = (label: string) =>
     .finite(`${label} muss endlich sein.`)
     .positive(`${label} muss ein positiver Zentimeterwert sein.`);
 
+const rasterField = () =>
+  cmField('Raster').min(MIN_RASTER_CM, `Raster muss mindestens ${MIN_RASTER_CM} cm betragen.`);
+
 export const CreateRaumInputSchema = z.object({
   name: z.string().trim().min(1, 'Name ist erforderlich.').max(100, 'Name darf maximal 100 Zeichen haben.'),
   breiteCm: cmField('Breite'),
   laengeCm: cmField('Länge'),
-  rasterCm: cmField('Raster'),
+  rasterCm: rasterField(),
 }).refine(
   (data) => data.rasterCm <= Math.min(data.breiteCm, data.laengeCm),
   { message: 'Raster darf die kleinere Raumseite nicht überschreiten.' }
@@ -54,7 +58,7 @@ export const UpdateRaumInputSchema = z.object({
   name: z.string().trim().min(1, 'Name ist erforderlich.').max(100, 'Name darf maximal 100 Zeichen haben.').optional(),
   breiteCm: cmField('Breite').optional(),
   laengeCm: cmField('Länge').optional(),
-  rasterCm: cmField('Raster').optional(),
+  rasterCm: rasterField().optional(),
 }).refine(
   (data) => data.name !== undefined || data.breiteCm !== undefined || data.laengeCm !== undefined || data.rasterCm !== undefined,
   { message: 'Mindestens ein Feld muss angegeben werden.' }
