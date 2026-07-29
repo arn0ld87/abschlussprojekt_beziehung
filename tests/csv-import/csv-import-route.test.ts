@@ -70,7 +70,7 @@ describe('CSV Import Routes', () => {
   it('POST /preview 200 ok', async () => {
     await setSession(mockUser);
     const k = await klassenService.create('u1', { name: 'K1' });
-    const res = await preview(req('POST', { csvText: 'Name\\nJohn' }), { params: Promise.resolve({ id: k.id }) });
+    const res = await preview(req('POST', { csvText: 'Name\nJohn' }), { params: Promise.resolve({ id: k.id }) });
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.totalRows).toBe(1);
@@ -79,7 +79,7 @@ describe('CSV Import Routes', () => {
   it('POST /commit 200 ok', async () => {
     await setSession(mockUser);
     const k = await klassenService.create('u1', { name: 'K1' });
-    const res = await commit(req('POST', { csvText: 'Name\\nJohn', strategy: 'skip' }), { params: Promise.resolve({ id: k.id }) });
+    const res = await commit(req('POST', { csvText: 'Name\nJohn', strategy: 'skip' }), { params: Promise.resolve({ id: k.id }) });
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.successCount).toBe(1);
