@@ -27,7 +27,8 @@ M2 und M3 werden in vertikale, einzeln überprüfbare GitHub-Slices zerlegt. Jed
 
 ## Abhängigkeitsfolge
 
-- M2 kann nach M0 beginnen; der erste Slice ist ausführbar, alle weiteren folgen seriell.
+- M2 ist nach M0 fachlich startbar. Da der GitHub-Milestone `M2 — Raumeditor` noch nicht existiert, bleiben #49–#55 absichtlich `blocked`, bis Milestone und Zuordnungen angelegt sind.
+- Nach der Milestone-Zuordnung wird #49 freigegeben; alle weiteren M2-Slices folgen seriell.
 - M3 beginnt erst nach Abschluss der Parent-Issues M1 (#3) und M2 (#4).
 - Innerhalb von M3 folgen die Slices seriell, weil sie denselben Plandokument-Vertrag erweitern.
 
