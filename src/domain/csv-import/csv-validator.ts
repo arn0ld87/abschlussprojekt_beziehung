@@ -1,5 +1,5 @@
 import { CreateSchuelerInput, CreateSchuelerInputSchema } from '../schueler/schueler';
-import { CreateSitzregelInput, CreateSitzregelInputSchema } from '../sitzregel/sitzregel';
+import { CreateSitzregelInput, CreateSitzregelInputSchema, SitzregelTypSchema } from '../sitzregel/sitzregel';
 
 export type CsvImportRowResult = {
   raw: Record<string, string>;
@@ -40,15 +40,21 @@ export function validateCsvRow(row: Record<string, string>): CsvImportRowResult 
   if (sitzregelnStr) {
     const parts = sitzregelnStr.split(',').map((s) => s.trim()).filter(Boolean);
     for (const part of parts) {
-      if (part === 'front_seat' || part === 'quiet_area') {
-        const parsedSr = CreateSitzregelInputSchema.safeParse({ typ: part, haerte: 'hard' });
-        if (parsedSr.success) {
-          sitzregeln.push(parsedSr.data as CreateSitzregelInput);
-        } else {
-          errors.push(`Sitzregel ungültig: ${part}`);
-        }
-      } else {
+      const typResult = SitzregelTypSchema.safeParse(part);
+      if (!typResult.success) {
         errors.push(`Sitzregel unbekannt: ${part}`);
+        continue;
+      }
+      const typ = typResult.data;
+      if (typ === 'near_to' || typ === 'away_from') {
+        errors.push(`Sitzregel ${typ} braucht einen Ziel-Schüler — im CSV-Import nicht unterstützt.`);
+        continue;
+      }
+      const parsedSr = CreateSitzregelInputSchema.safeParse({ typ, haerte: 'hard' });
+      if (parsedSr.success) {
+        sitzregeln.push(parsedSr.data as CreateSitzregelInput);
+      } else {
+        errors.push(`Sitzregel ungültig: ${part}`);
       }
     }
   }

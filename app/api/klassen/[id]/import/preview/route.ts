@@ -15,13 +15,31 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const klassenService = getDefaultKlassenService();
     await klassenService.getById(user.id, id); // check access
 
-    const body = await req.json();
-    if (!body.csvText) {
-      return NextResponse.json({ code: 'BAD_REQUEST', error: { message: 'csvText fehlt.' } }, { status: 400 });
+    let parsedBody: unknown;
+    try {
+      parsedBody = await req.json();
+    } catch {
+      return NextResponse.json(
+        { code: 'BAD_REQUEST', error: { message: 'Request-Body ist kein gültiges JSON.' } },
+        { status: 400 },
+      );
+    }
+    if (!parsedBody || typeof parsedBody !== 'object') {
+      return NextResponse.json(
+        { code: 'BAD_REQUEST', error: { message: 'Request-Body muss ein Objekt sein.' } },
+        { status: 400 },
+      );
+    }
+    const { csvText } = parsedBody as { csvText?: unknown };
+    if (typeof csvText !== 'string') {
+      return NextResponse.json(
+        { code: 'BAD_REQUEST', error: { message: 'csvText fehlt oder ist kein String.' } },
+        { status: 400 },
+      );
     }
 
     const service = getDefaultCsvImportService();
-    const result = service.preview(body.csvText, 5);
+    const result = service.preview(csvText, 5);
 
     return NextResponse.json(result);
   } catch (err) {

@@ -2,16 +2,7 @@
 
 import { useState } from 'react';
 import Button from '../../../../../src/ui/Button';
-
-type PreviewRow = {
-  schueler?: { name?: string };
-  errors: string[];
-};
-
-type CsvImportPreviewResult = {
-  totalRows: number;
-  previewRows: PreviewRow[];
-};
+import type { CsvImportPreviewResult } from '../../../../../src/domain/csv-import/csv-import-service';
 
 export default function CsvImportModal({
   klasseId,
@@ -104,10 +95,11 @@ export default function CsvImportModal({
         )}
 
         <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+          <label htmlFor="csv-import-text" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
             CSV Text einfügen (Spalten: Name, Initialen, Farbe, Lernstand, Verhalten, Notizen, Sitzregeln)
           </label>
           <textarea
+            id="csv-import-text"
             value={csvText}
             onChange={(e) => {
               setCsvText(e.target.value);
@@ -119,10 +111,11 @@ export default function CsvImportModal({
         </div>
 
         <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
+          <label htmlFor="csv-import-strategy" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>
             Bei Duplikaten (selber Name)
           </label>
           <select
+            id="csv-import-strategy"
             value={strategy}
             onChange={(e) => setStrategy(e.target.value as 'skip' | 'update' | 'duplicate')}
             style={{ width: '100%', padding: '0.5rem' }}

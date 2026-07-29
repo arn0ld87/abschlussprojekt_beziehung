@@ -55,12 +55,12 @@ describe('CSV Import Routes', () => {
     }
   }
 
-  function req(method: string, body?: unknown) {
+  function req(method: string, body?: unknown, kind: 'preview' | 'commit' = 'preview') {
     const headers = new Headers();
     if (currentSessionToken) {
       headers.set('Cookie', `sitzplan_session=${currentSessionToken}`);
     }
-    return new NextRequest('http://localhost/api/klassen/kl1/import/preview', {
+    return new NextRequest(`http://localhost/api/klassen/kl1/import/${kind}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -79,9 +79,60 @@ describe('CSV Import Routes', () => {
   it('POST /commit 200 ok', async () => {
     await setSession(mockUser);
     const k = await klassenService.create('u1', { name: 'K1' });
-    const res = await commit(req('POST', { csvText: 'Name\nJohn', strategy: 'skip' }), { params: Promise.resolve({ id: k.id }) });
+    const res = await commit(req('POST', { csvText: 'Name\nJohn', strategy: 'skip' }, 'commit'), { params: Promise.resolve({ id: k.id }) });
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.successCount).toBe(1);
+  });
+
+  it('POST /preview 401 ohne Session', async () => {
+    await setSession(null);
+    const res = await preview(req('POST', { csvText: 'Name\nJohn' }), { params: Promise.resolve({ id: 'kl1' }) });
+    expect(res.status).toBe(401);
+  });
+
+  it('POST /commit 401 ohne Session', async () => {
+    await setSession(null);
+    const res = await commit(req('POST', { csvText: 'Name\nJohn', strategy: 'skip' }, 'commit'), { params: Promise.resolve({ id: 'kl1' }) });
+    expect(res.status).toBe(401);
+  });
+
+  it('POST /preview 400 ohne csvText', async () => {
+    await setSession(mockUser);
+    const k = await klassenService.create('u1', { name: 'K1' });
+    const res = await preview(req('POST', {}), { params: Promise.resolve({ id: k.id }) });
+    expect(res.status).toBe(400);
+  });
+
+  it('POST /preview 400 mit ungültigem JSON', async () => {
+    await setSession(mockUser);
+    const k = await klassenService.create('u1', { name: 'K1' });
+    const badReq = new NextRequest('http://localhost/api/klassen/kl1/import/preview', {
+      method: 'POST',
+      headers: { 'Cookie': `sitzplan_session=${currentSessionToken}` },
+      body: '{not-json',
+    });
+    const res = await preview(badReq, { params: Promise.resolve({ id: k.id }) });
+    expect(res.status).toBe(400);
+  });
+
+  it('POST /commit 400 mit fehlendem strategy', async () => {
+    await setSession(mockUser);
+    const k = await klassenService.create('u1', { name: 'K1' });
+    const res = await commit(req('POST', { csvText: 'Name\nJohn' }, 'commit'), { params: Promise.resolve({ id: k.id }) });
+    expect(res.status).toBe(400);
+  });
+
+  it('POST /commit 400 mit unbekannter strategy', async () => {
+    await setSession(mockUser);
+    const k = await klassenService.create('u1', { name: 'K1' });
+    const res = await commit(req('POST', { csvText: 'Name\nJohn', strategy: 'merge' }, 'commit'), { params: Promise.resolve({ id: k.id }) });
+    expect(res.status).toBe(400);
+  });
+
+  it('POST /preview 404 bei unbekannter Klassen-ID', async () => {
+    await setSession(mockUser);
+    const res = await preview(req('POST', { csvText: 'Name\nJohn' }), { params: Promise.resolve({ id: 'missing' }) });
+    expect(res.status).toBe(404);
   });
 });
