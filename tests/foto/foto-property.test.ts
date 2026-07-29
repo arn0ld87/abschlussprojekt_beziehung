@@ -25,6 +25,7 @@ describe("Foto Property Tests", () => {
   it("always generates a valid UUIDv4-based internal filename without original path components", async () => {
     const dangerousOriginalNames = [
       "../../etc/passwd.png",
+      "../../../../etc/passwd",
       "my_private_photo_12345.jpg",
       "..\\..\\windows\\system32\\cmd.exe.png",
       "user/secret/document.jpeg",
@@ -86,5 +87,10 @@ describe("Foto Property Tests", () => {
 
   it("MAX_PHOTO_BYTES is exactly 5 MB", () => {
     expect(MAX_PHOTO_BYTES).toBe(5 * 1024 * 1024);
+  });
+
+  it("rejects path traversal in lese and loesche", async () => {
+    await expect(adapter.lese("../../etc/passwd")).rejects.toThrow();
+    await expect(adapter.loesche("../../etc/passwd")).rejects.toThrow();
   });
 });

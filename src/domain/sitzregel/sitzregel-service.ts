@@ -43,35 +43,8 @@ export class SitzregelService {
 
     const { typ, targetSchuelerId, haerte, gewicht } = parsed.data;
 
-    if (targetSchuelerId) {
-      if (targetSchuelerId === schuelerId) {
-        throw new SitzregelError('VALIDATION_ERROR', 'Ein Schüler kann nicht mit sich selbst geregelt werden.');
-      }
-      const target = await this.schuelerService.getById(userId, klasseId, targetSchuelerId);
-      if (target.klasseId !== klasseId) {
-        throw new SitzregelError('VALIDATION_ERROR', 'Ziel-Schüler gehört nicht zu dieser Klasse.');
-      }
-    }
-
-    // Check duplicate rules
-    const existingKlasseRules = await this.repository.findAllByKlasseId(klasseId);
-    for (const rule of existingKlasseRules) {
-      if (rule.typ === typ) {
-        if (typ === 'front_seat' || typ === 'quiet_area') {
-          if (rule.schuelerId === schuelerId) {
-            throw new SitzregelError('VALIDATION_ERROR', `Der Schüler hat bereits eine ${typ}-Regel.`);
-          }
-        } else if (typ === 'near_to' || typ === 'away_from') {
-          // Symmetric check: (schuelerId, target) or (target, schuelerId)
-          const samePair =
-            (rule.schuelerId === schuelerId && rule.targetSchuelerId === targetSchuelerId) ||
-            (rule.schuelerId === targetSchuelerId && rule.targetSchuelerId === schuelerId);
-          if (samePair) {
-            throw new SitzregelError('VALIDATION_ERROR', `Es existiert bereits eine ${typ}-Regel für diese beiden Schüler.`);
-          }
-        }
-      }
-    }
+    await this.pruefeTarget(userId, klasseId, schuelerId, targetSchuelerId ?? null);
+    await this.pruefeDuplikat(klasseId, schuelerId, typ, targetSchuelerId ?? null);
 
     const id = `stz_${randomUUID()}`;
     return this.repository.create({
@@ -118,12 +91,8 @@ export class SitzregelService {
       newGewicht = parsed.data.gewicht;
     }
 
-    if (newTarget) {
-      if (newTarget === schuelerId) {
-        throw new SitzregelError('VALIDATION_ERROR', 'Ein Schüler kann nicht mit sich selbst geregelt werden.');
-      }
-      await this.schuelerService.getById(userId, klasseId, newTarget);
-    }
+    await this.pruefeTarget(userId, klasseId, schuelerId, newTarget);
+    await this.pruefeDuplikat(klasseId, schuelerId, newTyp, newTarget, regelId);
 
     return this.repository.update(regelId, {
       typ: newTyp,
@@ -146,5 +115,45 @@ export class SitzregelService {
     }
 
     await this.repository.delete(regelId);
+  }
+
+  private async pruefeTarget(
+    userId: string,
+    klasseId: string,
+    schuelerId: string,
+    targetSchuelerId: string | null
+  ): Promise<void> {
+    if (targetSchuelerId === null) return;
+    if (targetSchuelerId === schuelerId) {
+      throw new SitzregelError('VALIDATION_ERROR', 'Ein Schüler kann nicht mit sich selbst geregelt werden.');
+    }
+    await this.schuelerService.getById(userId, klasseId, targetSchuelerId);
+  }
+
+  private async pruefeDuplikat(
+    klasseId: string,
+    schuelerId: string,
+    typ: Sitzregel['typ'],
+    targetSchuelerId: string | null,
+    excludeRegelId?: string
+  ): Promise<void> {
+    const existingKlasseRules = await this.repository.findAllByKlasseId(klasseId);
+    for (const rule of existingKlasseRules) {
+      if (excludeRegelId && rule.id === excludeRegelId) continue;
+      if (rule.typ === typ) {
+        if (typ === 'front_seat' || typ === 'quiet_area') {
+          if (rule.schuelerId === schuelerId) {
+            throw new SitzregelError('VALIDATION_ERROR', `Der Schüler hat bereits eine ${typ}-Regel.`);
+          }
+        } else if (typ === 'near_to' || typ === 'away_from') {
+          const samePair =
+            (rule.schuelerId === schuelerId && rule.targetSchuelerId === targetSchuelerId) ||
+            (rule.schuelerId === targetSchuelerId && rule.targetSchuelerId === schuelerId);
+          if (samePair) {
+            throw new SitzregelError('VALIDATION_ERROR', `Es existiert bereits eine ${typ}-Regel für diese beiden Schüler.`);
+          }
+        }
+      }
+    }
   }
 }

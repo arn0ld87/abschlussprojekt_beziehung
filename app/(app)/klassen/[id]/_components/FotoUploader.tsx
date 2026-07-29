@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp"];
@@ -33,6 +33,16 @@ export function FotoUploader({ klasseId, schuelerId, fotoUrl }: FotoUploaderProp
 
   // Bei Wechsel der fotoUrl laedt das <img> neu; onLoad/onError syncs
   // fotoVorhanden automatisch. Ein zusaetzlicher Effect ist nicht noetig.
+
+  // Object-URLs muessen freigegeben werden, sobald sie nicht mehr gebraucht
+  // werden — auch beim Unmount waehrend eines laufenden Uploads. revoke ist
+  // idempotent, daher ist ein doppelter Aufruf (z.B. nach erfolgtem Upload)
+  // harmlos.
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const isUploading = state.kind === "uploading";
   const errorMessage = state.kind === "error" ? state.message : null;

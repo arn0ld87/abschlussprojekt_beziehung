@@ -154,4 +154,51 @@ describe('Schueler & Sitzregel Services', () => {
       })
     ).rejects.toThrow(SitzregelError);
   });
+
+  it('rejects update that would create a duplicate front_seat rule', async () => {
+    const k = await klassenService.create('u1', { name: '8a' });
+    const s1 = await schuelerService.create('u1', k.id, { name: 'Max' });
+
+    // Erste front_seat-Regel für s1
+    await sitzregelService.create('u1', k.id, s1.id, {
+      typ: 'front_seat',
+      haerte: 'hard',
+    });
+
+    // Zweite Regel für s1 (quiet_area), Update auf front_seat würde Duplikat erzeugen
+    const r2 = await sitzregelService.create('u1', k.id, s1.id, {
+      typ: 'quiet_area',
+      haerte: 'hard',
+    });
+
+    await expect(
+      sitzregelService.update('u1', k.id, s1.id, r2.id, {
+        typ: 'front_seat',
+      })
+    ).rejects.toThrow(SitzregelError);
+  });
+
+  it('allows update to current typ/target without duplicate false positive', async () => {
+    const k = await klassenService.create('u1', { name: '8a' });
+    const s1 = await schuelerService.create('u1', k.id, { name: 'Max' });
+    const s2 = await schuelerService.create('u1', k.id, { name: 'Anna' });
+
+    const r = await sitzregelService.create('u1', k.id, s1.id, {
+      typ: 'near_to',
+      targetSchuelerId: s2.id,
+      haerte: 'weighted',
+      gewicht: 0.5,
+    });
+
+    // Update auf denselben Typ/Target muss erlaubt sein (excludeRegelId wirkt).
+    const updated = await sitzregelService.update('u1', k.id, s1.id, r.id, {
+      typ: 'near_to',
+      targetSchuelerId: s2.id,
+      gewicht: 0.7,
+    });
+
+    expect(updated.typ).toBe('near_to');
+    expect(updated.targetSchuelerId).toBe(s2.id);
+    expect(updated.gewicht).toBe(0.7);
+  });
 });

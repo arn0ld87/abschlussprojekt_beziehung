@@ -45,6 +45,7 @@ export class DrizzleSitzregelRepository implements SitzregelRepository {
   ): Promise<Sitzregel> {
     const db = getDb();
     const [row] = await db.update(sitzregeln).set(data).where(eq(sitzregeln.id, id)).returning();
+    if (!row) throw new Error("Sitzregel nicht gefunden.");
     return this.mapRowToDomain(row);
   }
 

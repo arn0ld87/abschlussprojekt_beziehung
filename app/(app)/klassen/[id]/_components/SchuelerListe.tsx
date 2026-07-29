@@ -37,6 +37,7 @@ export default function SchuelerListe({ klasseId }: { klasseId: string }) {
 
   const [editingSchueler, setEditingSchueler] = useState<SchuelerData | null | 'new'>(null);
   const [managingSitzregelnSchueler, setManagingSitzregelnSchueler] = useState<SchuelerData | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -75,7 +76,9 @@ export default function SchuelerListe({ klasseId }: { klasseId: string }) {
   }, [klasseId]);
 
   const handleDelete = async (id: string, name: string) => {
+    if (deletingId) return;
     if (!confirm(`Schüler "${name}" wirklich löschen?`)) return;
+    setDeletingId(id);
     try {
       const res = await fetch(`/api/klassen/${klasseId}/schueler/${id}`, {
         method: 'DELETE',
@@ -86,6 +89,8 @@ export default function SchuelerListe({ klasseId }: { klasseId: string }) {
       await fetchSchueler();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Fehler beim Löschen.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -139,8 +144,8 @@ export default function SchuelerListe({ klasseId }: { klasseId: string }) {
                 <Button variant="ghost" onClick={() => setEditingSchueler(s)}>
                   Bearbeiten
                 </Button>
-                <Button variant="ghost" onClick={() => handleDelete(s.id, s.name)}>
-                  Löschen
+                <Button variant="ghost" onClick={() => handleDelete(s.id, s.name)} disabled={deletingId === s.id}>
+                  {deletingId === s.id ? 'Lösche...' : 'Löschen'}
                 </Button>
               </div>
             </div>
