@@ -114,7 +114,9 @@ describe("Foto Route Handlers Integration", () => {
     const k = await klassenService.create("u1", { name: "9a" });
     const s = await schuelerService.create("u1", k.id, { name: "Max" });
 
-    const file = new File(["fake image content"], "avatar.png", { type: "image/png" });
+    // Echte PNG-Magic-Bytes fuer die Magic-Byte-Validierung
+    const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
+    const file = new File([pngBytes], "avatar.png", { type: "image/png" });
     const formData = new FormData();
     formData.append("foto", file);
 
@@ -123,11 +125,48 @@ describe("Foto Route Handlers Integration", () => {
     const postData = await postRes.json();
     expect(postData.schuelerId).toBe(s.id);
     expect(postData.mimeType).toBe("image/png");
+    expect(postData.byteSize).toBe(pngBytes.byteLength);
 
     const getRes = await GET(req("GET"), { params: Promise.resolve({ id: k.id, sid: s.id }) });
     expect(getRes.status).toBe(200);
     expect(getRes.headers.get("Content-Type")).toBe("image/png");
     expect(getRes.headers.get("ETag")).toBeTruthy();
+    expect(getRes.headers.get("Cache-Control")).toContain("private");
+    expect(getRes.headers.get("Cache-Control")).toContain("no-store");
+    expect(getRes.headers.get("X-Content-Type-Options")).toBe("nosniff");
+  });
+
+  it("POST /foto returns 415 for non-allowed MIME types", async () => {
+    await setSession(mockUser);
+    const k = await klassenService.create("u1", { name: "9a" });
+    const s = await schuelerService.create("u1", k.id, { name: "Max" });
+
+    const gifBytes = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
+    const file = new File([gifBytes], "avatar.gif", { type: "image/gif" });
+    const formData = new FormData();
+    formData.append("foto", file);
+
+    const res = await POST(req("POST", formData), { params: Promise.resolve({ id: k.id, sid: s.id }) });
+    expect(res.status).toBe(415);
+  });
+
+  it("POST /foto returns 413 when file exceeds 5MB", async () => {
+    await setSession(mockUser);
+    const k = await klassenService.create("u1", { name: "9a" });
+    const s = await schuelerService.create("u1", k.id, { name: "Max" });
+
+    // JPEG-Header + Payload > 5MB
+    const jpegHeader = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
+    const payload = new Uint8Array(5 * 1024 * 1024 + 1);
+    const big = new Uint8Array(jpegHeader.length + payload.length);
+    big.set(jpegHeader, 0);
+    big.set(payload, jpegHeader.length);
+    const file = new File([big], "big.jpg", { type: "image/jpeg" });
+    const formData = new FormData();
+    formData.append("foto", file);
+
+    const res = await POST(req("POST", formData), { params: Promise.resolve({ id: k.id, sid: s.id }) });
+    expect(res.status).toBe(413);
   });
 
   it("DELETE /foto removes photo", async () => {
@@ -135,7 +174,8 @@ describe("Foto Route Handlers Integration", () => {
     const k = await klassenService.create("u1", { name: "9a" });
     const s = await schuelerService.create("u1", k.id, { name: "Max" });
 
-    const file = new File(["img"], "img.jpg", { type: "image/jpeg" });
+    const jpegBytes = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+    const file = new File([jpegBytes], "img.jpg", { type: "image/jpeg" });
     await fotoService.uploadFoto(s.id, file);
 
     const delRes = await DELETE(req("DELETE"), { params: Promise.resolve({ id: k.id, sid: s.id }) });
@@ -143,5 +183,31 @@ describe("Foto Route Handlers Integration", () => {
 
     const getRes = await GET(req("GET"), { params: Promise.resolve({ id: k.id, sid: s.id }) });
     expect(getRes.status).toBe(404);
+  });
+
+  it("GET /foto returns 304 when If-None-Match matches ETag", async () => {
+    await setSession(mockUser);
+    const k = await klassenService.create("u1", { name: "9a" });
+    const s = await schuelerService.create("u1", k.id, { name: "Max" });
+
+    const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d]);
+    const file = new File([pngBytes], "avatar.png", { type: "image/png" });
+    await fotoService.uploadFoto(s.id, file);
+
+    // Erst GET zum ETag holen
+    const firstGet = await GET(req("GET"), { params: Promise.resolve({ id: k.id, sid: s.id }) });
+    const etag = firstGet.headers.get("ETag");
+    expect(etag).toBeTruthy();
+
+    // Zweites GET mit If-None-Match -> 304
+    const headers = new Headers();
+    if (currentSessionToken) headers.set("Cookie", `sitzplan_session=${currentSessionToken}`);
+    headers.set("If-None-Match", etag as string);
+    const req2 = new NextRequest("http://localhost/api/klassen/kl1/schueler/s1/foto", {
+      method: "GET",
+      headers,
+    });
+    const secondGet = await GET(req2, { params: Promise.resolve({ id: k.id, sid: s.id }) });
+    expect(secondGet.status).toBe(304);
   });
 });

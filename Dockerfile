@@ -21,6 +21,12 @@ ENV NODE_ENV=production
 # (HOSTNAME ist im Container gesetzt); 0.0.0.0 macht den Healthcheck auf
 # localhost und das Port-Mapping gleichermassen erreichbar.
 ENV HOSTNAME=0.0.0.0
+# Persistentes Foto-Verzeichnis. Das docker-compose-Volume `sitzplan_uploads`
+# wird beim Lauf nach /app/uploads gemounted; der Owner muss zu bun:bun passen,
+# damit der non-root USER bun schreiben darf. Falls das Volume frisch erstellt
+# wird, uebernimmt Docker den hier angelegten Owner.
+ENV UPLOAD_DIR=/app/uploads
+RUN mkdir -p /app/uploads && chown -R bun:bun /app/uploads
 COPY --from=build --chown=bun:bun /app/.next/standalone ./dist
 COPY --from=build --chown=bun:bun /app/public ./public
 COPY --from=build --chown=bun:bun /app/drizzle ./drizzle

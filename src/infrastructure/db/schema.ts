@@ -123,9 +123,12 @@ export const sitzregeln = pgTable("sitzregeln", {
 export const fotos = pgTable("fotos", {
   id: text("id").primaryKey(),
   schuelerId: text("schueler_id").notNull().unique().references(() => schueler.id, { onDelete: "cascade" }),
-  pfad: text("pfad").notNull(),
+  internerDateiname: text("interner_dateiname").notNull(),
   mimeType: text("mime_type").notNull(),
-  groesse: integer("groesse").notNull(),
+  byteSize: integer("byte_size").notNull(),
+  breitePx: integer("breite_px"),
+  hoehePx: integer("hoehe_px"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });

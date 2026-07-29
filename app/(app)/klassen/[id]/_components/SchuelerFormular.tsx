@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Button from '../../../../../src/ui/Button';
 import { SchuelerData } from './SchuelerListe';
+import { FotoUploader } from './FotoUploader';
 
 interface Props {
   klasseId: string;
@@ -88,6 +89,16 @@ export default function SchuelerFormular({ klasseId, schueler, onClose, onSaved 
       >
         <h3>{schueler ? 'Schülerprofil bearbeiten' : 'Neuen Schüler anlegen'}</h3>
         {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>{error}</p>}
+
+        {schueler && (
+          <div style={{ marginTop: '1rem', padding: '0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px' }}>
+            <FotoUploader
+              klasseId={klasseId}
+              schuelerId={schueler.id}
+              fotoUrl={`/api/klassen/${klasseId}/schueler/${schueler.id}/foto`}
+            />
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
