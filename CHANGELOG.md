@@ -4,6 +4,29 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 
 ## Unreleased
 
+## M1 — Klassen — 29.07.2026
+
+**Betroffene Bereiche:** Auth und Datenbank-Grundlage, Klassenverwaltung, Schülerprofile und Sitzregeln, persistenter Foto-Upload, CSV-Import.
+
+**Child-Issues:** #42 (PR [#47](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/47), Merge `ed812e2`), #43 (PR [#64](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/64), Merge `2bbf8d0`), #44 (Merge `0ad3d0b`), #45 (PR [#65](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/65), Merge `2518ef4`), #46 (PR [#68](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/68), Merge `1e0a96c`). Das Parent-Issue #3 bleibt bis zur formalen M1-Schließung offen.
+
+### Added
+
+- E-Mail/Passwort-Registrierung und -Anmeldung über den framework-freien `AuthService` mit `sitzplan_session`-Cookie, PostgreSQL-Sessions und geschützter Beispielseite (M1 #42)
+- Drizzle-Migrationen und Datenbank-Testinfrastruktur: `0001_init_auth.sql` (M1 #42), `0002_klassen.sql` (M1 #43), `0003_schueler_sitzregeln.sql` (M1 #44), `0004_fotos.sql` (M1 #45)
+- Klassenverwaltung mit CRUD, Soft-Delete via `deleted_at`, Ownership-Prüfung und framework-freiem `KlassenService` (M1 #43)
+- Schülerprofile mit `name`, `initialen`, `farbe`, `lernstand`, `verhalten`, `freitextnotizen` und `foto_placeholder_id` (M1 #44)
+- strukturierte Sitzregeln (`front_seat`, `quiet_area`, `near_to`, `away_from`) mit Härte `hard | weighted`, Gewicht in [0,1] und service-seitiger Peer-Validierung innerhalb derselben Klasse (M1 #44)
+- persistenter Foto-Upload mit UUIDv4-Dateinamen, 5-MB-Limit, MIME- und Magic-Byte-Prüfung, ETag-Auslieferung und Docker-Volume `sitzplan_uploads` (M1 #45)
+- CSV-Import für Klassenlisten mit dokumentiertem Spalten-Mapping, Vorschau mit zeilenweisen Fehlern, bestätigungspflichtigem Commit und Duplikatstrategie `skip | update | duplicate` (M1 #46)
+- Route Handler für Schüler, Sitzregeln, Foto und CSV-Import unter `/api/klassen/[id]/...` mit Ownership- und Auth-Prüfung (M1 #44–#46)
+- UI im Klassendetail: Schülerliste, Schülerformular, Sitzregel-Editor, Foto-Uploader und CSV-Import-Modal (M1 #44–#46)
+- Property-Tests für Sitzregel-Symmetrie/-Eindeutigkeit, Foto-Dateinamen-Form und CSV-Parser-Permutationsstabilität (M1 #44–#46)
+
+### Known limitations
+
+- Die ausgelieferte Auth-Strecke nutzt den eigenen `AuthService` mit `sitzplan_session`-Cookie; die vorhandene Better-Auth-Konfiguration (`src/infrastructure/auth/better-auth.ts`) ist von keinem Route Handler importiert und damit nicht live. Eine etwaige Umstellung auf Better Auth ist eigenständig nachzuholen (M1 #42).
+
 ## M0 — Foundation — 29.07.2026
 
 **Betroffene Bereiche:** Repository-Governance, Dokumentationslayout, Next.js-Scaffold, Anwendungs-CI, Runtime-Baseline, Docker-Compose und Designsystem.
