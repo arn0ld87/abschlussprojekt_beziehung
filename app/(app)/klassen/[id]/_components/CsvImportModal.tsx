@@ -3,9 +3,14 @@
 import { useState } from 'react';
 import Button from '../../../../../src/ui/Button';
 
+type PreviewRow = {
+  schueler?: { name?: string };
+  errors: string[];
+};
+
 type CsvImportPreviewResult = {
   totalRows: number;
-  previewRows: any[];
+  previewRows: PreviewRow[];
 };
 
 export default function CsvImportModal({
@@ -37,8 +42,8 @@ export default function CsvImportModal({
         throw new Error(data.error?.message || 'Fehler beim Preview');
       }
       setPreview(data);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Unerwarteter Fehler');
     } finally {
       setLoading(false);
     }
@@ -59,8 +64,8 @@ export default function CsvImportModal({
       }
       alert(`Import erfolgreich: ${data.successCount} angelegt, ${data.updateCount} aktualisiert, ${data.skipCount} übersprungen, ${data.errorCount} Fehler.`);
       onSaved();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Unerwarteter Fehler');
     } finally {
       setLoading(false);
     }
@@ -116,7 +121,7 @@ export default function CsvImportModal({
           </label>
           <select
             value={strategy}
-            onChange={(e) => setStrategy(e.target.value as any)}
+            onChange={(e) => setStrategy(e.target.value as 'skip' | 'update' | 'duplicate')}
             style={{ width: '100%', padding: '0.5rem' }}
             disabled={loading}
           >

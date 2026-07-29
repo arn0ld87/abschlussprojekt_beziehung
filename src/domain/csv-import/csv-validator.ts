@@ -1,6 +1,5 @@
 import { CreateSchuelerInput, CreateSchuelerInputSchema } from '../schueler/schueler';
 import { CreateSitzregelInput, CreateSitzregelInputSchema } from '../sitzregel/sitzregel';
-import { z } from 'zod';
 
 export type CsvImportRowResult = {
   raw: Record<string, string>;
@@ -12,7 +11,7 @@ export type CsvImportRowResult = {
 export function validateCsvRow(row: Record<string, string>): CsvImportRowResult {
   const errors: string[] = [];
   
-  const schuelerInput = {
+  const schuelerInput: Record<string, string | undefined> = {
     name: row['Name'] || row['name'] || '',
     initialen: row['Initialen'] || row['initialen'] || undefined,
     farbe: row['Farbe'] || row['farbe'] || undefined,
@@ -21,8 +20,8 @@ export function validateCsvRow(row: Record<string, string>): CsvImportRowResult 
     freitextnotizen: row['Freitextnotizen'] || row['freitextnotizen'] || row['Notizen'] || undefined,
   };
   
-  Object.keys(schuelerInput).forEach(key => {
-    if ((schuelerInput as any)[key] === '') (schuelerInput as any)[key] = undefined;
+  Object.keys(schuelerInput).forEach((key) => {
+    if (schuelerInput[key] === '') schuelerInput[key] = undefined;
   });
 
   const parsedSchueler = CreateSchuelerInputSchema.safeParse(schuelerInput);
@@ -31,7 +30,7 @@ export function validateCsvRow(row: Record<string, string>): CsvImportRowResult 
   if (parsedSchueler.success) {
     schueler = parsedSchueler.data;
   } else {
-    parsedSchueler.error.errors.forEach(e => {
+    parsedSchueler.error.errors.forEach((e) => {
       errors.push(`Schüler: ${e.path.join('.')}: ${e.message}`);
     });
   }
@@ -39,7 +38,7 @@ export function validateCsvRow(row: Record<string, string>): CsvImportRowResult 
   const sitzregeln: CreateSitzregelInput[] = [];
   const sitzregelnStr = row['Sitzregeln'] || row['sitzregeln'] || '';
   if (sitzregelnStr) {
-    const parts = sitzregelnStr.split(',').map(s => s.trim()).filter(Boolean);
+    const parts = sitzregelnStr.split(',').map((s) => s.trim()).filter(Boolean);
     for (const part of parts) {
       if (part === 'front_seat' || part === 'quiet_area') {
         const parsedSr = CreateSitzregelInputSchema.safeParse({ typ: part, haerte: 'hard' });

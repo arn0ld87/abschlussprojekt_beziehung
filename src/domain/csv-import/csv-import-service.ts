@@ -94,14 +94,14 @@ export class CsvImportService {
            for (const sr of row.sitzregeln) {
              try {
                await this.sitzregelService.create(userId, klasseId, schuelerId, sr);
-             } catch (e: any) {
-               errors.push(`Zeile ${i + 1} (Sitzregel): ${e.message}`);
+             } catch (e: unknown) {
+               errors.push(`Zeile ${i + 1} (Sitzregel): ${e instanceof Error ? e.message : 'Fehler'}`);
              }
            }
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         errorCount++;
-        errors.push(`Zeile ${i + 1}: ${e.message}`);
+        errors.push(`Zeile ${i + 1}: ${e instanceof Error ? e.message : 'Fehler'}`);
       }
     }
     

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST as preview } from '../../app/api/klassen/[id]/import/preview/route';
 import { POST as commit } from '../../app/api/klassen/[id]/import/commit/route';
-import { setGlobalKlassenService, getDefaultKlassenService } from '../../src/services/klasse';
+import { setGlobalKlassenService } from '../../src/services/klasse';
 import { setGlobalSchuelerService } from '../../src/services/schueler';
 import { setGlobalSitzregelService } from '../../src/services/sitzregel';
 import { setGlobalCsvImportService } from '../../src/services/csv-import';

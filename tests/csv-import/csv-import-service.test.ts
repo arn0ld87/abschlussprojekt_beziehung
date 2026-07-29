@@ -5,10 +5,12 @@ import { SchuelerService } from '../../src/domain/schueler';
 import { SitzregelService } from '../../src/domain/sitzregel';
 import { InMemorySitzregelRepository } from '../../src/infrastructure/db/in-memory-sitzregel-repository';
 
+import { KlassenService } from '../../src/domain/klasse';
+
 // We need a dummy KlassenService.
 const dummyKlassenService = {
   getById: async () => ({ id: 'kl1', name: 'Klasse 1' }),
-} as any;
+} as unknown as KlassenService;
 
 describe('CsvImportService', () => {
   let schuelerService: SchuelerService;
