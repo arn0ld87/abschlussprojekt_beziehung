@@ -18,6 +18,10 @@
     "jsx": "react-jsx",
     "incremental": true,
     "allowImportingTsExtensions": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    },
     "types": [
       "node"
     ],

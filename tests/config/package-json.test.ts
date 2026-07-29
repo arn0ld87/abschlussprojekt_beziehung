@@ -21,7 +21,7 @@ describe("package.json contract (M0 #27 foundation baseline)", () => {
     expect(pkg.engines.node).toBe(">=24.0.0");
   });
 
-  it("declares exactly the dev/build/start/lint/typecheck/test scripts", () => {
+  it("declares the core scripts including db:migrate for M1", () => {
     expect(pkg.scripts).toEqual({
       dev: "next dev",
       build: "next build",
@@ -29,6 +29,7 @@ describe("package.json contract (M0 #27 foundation baseline)", () => {
       lint: "eslint . --max-warnings=0",
       typecheck: "next typegen && tsc --noEmit",
       test: "vitest run",
+      "db:migrate": "bun run scripts/migrate.ts",
     });
   });
 
@@ -51,12 +52,15 @@ describe("package.json contract (M0 #27 foundation baseline)", () => {
     expect(pkg.dependencies["react-dom"]).toBe("^19.0.0");
   });
 
-  it("declares next, react, react-dom, and pg as runtime dependencies", () => {
+  it("declares next, react, react-dom, pg, drizzle-orm, better-auth, and zod as runtime dependencies", () => {
     expect(Object.keys(pkg.dependencies).sort()).toEqual([
+      "better-auth",
+      "drizzle-orm",
       "next",
       "pg",
       "react",
       "react-dom",
+      "zod",
     ]);
   });
 

@@ -4,11 +4,8 @@ Application Services — orchestrieren Anwendungsfälle gegen die Domäne.
 
 ## Abhängigkeitsrichtung
 
-`services` darf **nur** aus `src/domain` importieren. Niemals aus
-`src/infrastructure` oder direkt aus UI/Route-Handlern. UI ruft Services über
-Route-Handler auf, niemals direkt.
+`services` importiert aus `src/domain` und verknüpft Anwendungsfälle über Repositories/Infrastruktur-Ports. UI ruft Services über Route-Handler auf, niemals direkt.
 
-## Status M0
+## Status M1
 
-Leerer Platzhalter. Echte Service-Implementierungen folgen in M5 — siehe
-Issue #21.
+- `src/services/auth`: `AuthService` und `getSession()` Helper für Benutzerregistrierung, Anmeldung, Abmeldung und Session-Validierung.
