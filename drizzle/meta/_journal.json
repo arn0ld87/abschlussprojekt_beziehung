@@ -15,6 +15,13 @@
       "when": 1785288506749,
       "tag": "0002_klassen",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785291494408,
+      "tag": "0004_fotos",
+      "breakpoints": true
     }
   ]
 }

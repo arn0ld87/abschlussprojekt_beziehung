@@ -10,8 +10,11 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-changeme}@postgres:5432/${POSTGRES_DB:-sitzplan}
       NODE_ENV: production
       PORT: ${PORT:-3000}
+      UPLOAD_DIR: /app/uploads
     ports:
       - "${PORT:-3000}:3000"
+    volumes:
+      - sitzplan_uploads:/app/uploads
     networks:
       - sitzplan
     healthcheck:
@@ -50,4 +53,6 @@ networks:
 
 volumes:
   sitzplan_pgdata:
+    driver: local
+  sitzplan_uploads:
     driver: local

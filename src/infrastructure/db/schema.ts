@@ -1,4 +1,4 @@
-import { doublePrecision, index, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { doublePrecision, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -119,3 +119,13 @@ export const sitzregeln = pgTable("sitzregeln", {
   schuelerIdIdx: index("sitzregeln_schueler_id_idx").on(table.schuelerId),
   klasseIdIdx: index("sitzregeln_klasse_id_idx").on(table.klasseId),
 }));
+
+export const fotos = pgTable("fotos", {
+  id: text("id").primaryKey(),
+  schuelerId: text("schueler_id").notNull().unique().references(() => schueler.id, { onDelete: "cascade" }),
+  pfad: text("pfad").notNull(),
+  mimeType: text("mime_type").notNull(),
+  groesse: integer("groesse").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
