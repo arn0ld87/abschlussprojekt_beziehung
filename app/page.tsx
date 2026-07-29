@@ -50,16 +50,7 @@ export default function HomePage() {
 
   return (
     <main style={{ maxWidth: "880px", margin: "0 auto", padding: "2rem 1.5rem" }}>
-      <h1>Abschlussprojekt Beziehung — M0 Foundation</h1>
-      <p style={{ color: "#555" }}>
-        Stack: Next.js 16 (App Router) + TypeScript strict + Vitest.
-      </p>
-      <p style={{ color: "#555" }}>
-        Nächster Meilenstein: M1 Klassen (Issue #3).
-      </p>
-      <p style={{ color: "#555" }}>
-        Grenzen: <code>src/domain</code> (rein), <code>src/services</code> (Orchestrierung), <code>src/infrastructure</code> (DB/Auth).
-      </p>
+      <h1>Abschlussprojekt Beziehung — Dev-Übersicht</h1>
       <p style={{ color: "#555" }}>
         Live aus <code>app/</code> gescannt — {pages.length} Seiten, {apis.length} API-Routes im
         aktuellen Stand. Status: 🟢 geht · 🟡 Login nötig · 🔴 geplant / fehlt.
@@ -74,7 +65,8 @@ export default function HomePage() {
             return (
               <div key={r.path} style={cardStyle}>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                  <Link href={hrefFor(r.path)}
+                  <a
+                    href={hrefFor(r.path)}
                     style={{
                       fontFamily: "ui-monospace, SFMono-Regular, monospace",
                       color: "#1d4ed8",
@@ -83,7 +75,7 @@ export default function HomePage() {
                     }}
                   >
                     {r.path}
-                  </Link>
+                  </a>
                   <span style={badgeStyle(b.color)}>
                     {b.emoji} {b.text}
                   </span>

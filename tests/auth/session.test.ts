@@ -107,12 +107,11 @@ describe("AuthService & Session Lifecycle (M1 #42)", () => {
         password: "securePassword123!",
       });
 
-      // Modify the session in the repository to make it expired
       const dbSession = await repo.findSessionById(session.id);
       expect(dbSession).not.toBeNull();
 
       if (dbSession) {
-        dbSession.expiresAt = new Date(Date.now() - 1000); // Set to past
+        dbSession.expiresAt = new Date(Date.now() - 1000);
       }
 
       const validAfter = await authService.validateSession(session.id);
@@ -143,9 +142,7 @@ describe("AuthService & Session Lifecycle (M1 #42)", () => {
     });
 
     it("returns null when no session cookie is provided", async () => {
-      const requestWithoutCookie = new Request(
-        "http://localhost:3000/api/test",
-      );
+      const requestWithoutCookie = new Request("http://localhost:3000/api/test");
       const currentUser = await getSession(requestWithoutCookie, authService);
       expect(currentUser).toBeNull();
     });
