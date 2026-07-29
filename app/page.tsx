@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import Link from "next/link";
 import { listRoutes, getMeta, type RouteStatus } from "./route-meta";
 
 // Dev-Übersicht zur Laufzeit: scannt app/ nach page.tsx/route.ts.
@@ -6,7 +7,10 @@ import { listRoutes, getMeta, type RouteStatus } from "./route-meta";
 // ein Coverage-Test stellt sicher, dass jede Route dort gepflegt ist.
 export const dynamic = "force-dynamic";
 
-const STATUS_META: Record<RouteStatus, { emoji: string; text: string; color: string }> = {
+const STATUS_META: Record<
+  RouteStatus,
+  { emoji: string; text: string; color: string }
+> = {
   green: { emoji: "🟢", text: "geht", color: "#15803d" },
   yellow: { emoji: "🟡", text: "Login nötig", color: "#b45309" },
   red: { emoji: "🔴", text: "geplant / fehlt", color: "#b91c1c" },
@@ -48,12 +52,34 @@ export default function HomePage() {
   const apis = routes.filter((r) => r.kind === "api");
 
   return (
-    <main style={{ maxWidth: "880px", margin: "0 auto", padding: "2rem 1.5rem" }}>
-      <h1>Abschlussprojekt Beziehung — Dev-Übersicht</h1>
+    <main>
+      <h1>Abschlussprojekt Beziehung — M0 Foundation</h1>
       <p style={{ color: "#555" }}>
-        Live aus <code>app/</code> gescannt — {pages.length} Seiten, {apis.length} API-Routes im
-        aktuellen Stand. Status: 🟢 geht · 🟡 Login nötig · 🔴 geplant / fehlt.
+        Stack: Next.js 16 (App Router) + TypeScript strict + Vitest.
       </p>
+
+      <section style={{ marginTop: "1.5rem" }}>
+        <h2 style={{ fontSize: "1.1rem" }}>Architektur</h2>
+        <div style={{ display: "grid", gap: "0.5rem", marginTop: "0.75rem" }}>
+          <div>
+            <code>src/domain</code> - Domain models und Geschäftslogik
+          </div>
+          <div>
+            <code>src/services</code> - Application services
+          </div>
+          <div>
+            <code>src/infrastructure</code> - Repositories und externe
+            Integrationen
+          </div>
+        </div>
+      </section>
+
+      <section style={{ marginTop: "1.75rem" }}>
+        <h2 style={{ fontSize: "1.1rem", marginTop: 0 }}>Nächste Schritte</h2>
+        <p style={{ color: "#555", marginTop: "0.5rem", lineHeight: 1.5 }}>
+          Nächster Meilenstein: M1 Klassen (Issue #3).
+        </p>
+      </section>
 
       <section style={{ marginTop: "1.5rem" }}>
         <h2 style={{ fontSize: "1.1rem" }}>Seiten</h2>
@@ -63,8 +89,15 @@ export default function HomePage() {
             const b = STATUS_META[meta.status];
             return (
               <div key={r.path} style={cardStyle}>
-                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
-                  <a
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <Link
                     href={hrefFor(r.path)}
                     style={{
                       fontFamily: "ui-monospace, SFMono-Regular, monospace",
@@ -74,13 +107,19 @@ export default function HomePage() {
                     }}
                   >
                     {r.path}
-                  </a>
+                  </Link>
                   <span style={badgeStyle(b.color)}>
                     {b.emoji} {b.text}
                   </span>
                 </div>
                 {meta.hint && (
-                  <div style={{ color: "#6b7280", fontSize: "0.85rem", marginTop: "0.25rem" }}>
+                  <div
+                    style={{
+                      color: "#6b7280",
+                      fontSize: "0.85rem",
+                      marginTop: "0.25rem",
+                    }}
+                  >
                     {meta.hint}
                   </div>
                 )}
@@ -111,7 +150,11 @@ export default function HomePage() {
                 <span style={badgeStyle(b.color)}>
                   {b.emoji} {b.text}
                 </span>
-                {meta.hint && <span style={{ color: "#6b7280", fontSize: "0.8rem" }}>({meta.hint})</span>}
+                {meta.hint && (
+                  <span style={{ color: "#6b7280", fontSize: "0.8rem" }}>
+                    ({meta.hint})
+                  </span>
+                )}
               </div>
             );
           })}
@@ -121,10 +164,14 @@ export default function HomePage() {
       <section style={{ marginTop: "1.75rem", ...cardStyle }}>
         <h2 style={{ fontSize: "1.1rem", marginTop: 0 }}>Hinweis</h2>
         <p style={{ color: "#555", marginTop: "0.5rem", lineHeight: 1.5 }}>
-          Dev-Helper (Throwaway). Dynamische Routes wie <code>/klassen/[id]</code> brauchen eine
-          echte ID — am besten über <a href="/klassen" style={{ color: "#1d4ed8" }}>/klassen</a>{" "}
-          navigieren. Die Liste wird zur Laufzeit aus dem Dateisystem erzeugt; Status-Badges aus{" "}
-          <code>route-meta.ts</code> (Coverage-Test erzwingt Pflege).
+          Dev-Helper (Throwaway). Dynamische Routes wie{" "}
+          <code>/klassen/[id]</code> brauchen eine echte ID — am besten über{" "}
+          <Link href="/klassen" style={{ color: "#1d4ed8" }}>
+            /klassen
+          </Link>{" "}
+          navigieren. Die Liste wird zur Laufzeit aus dem Dateisystem erzeugt;
+          Status-Badges aus <code>route-meta.ts</code> (Coverage-Test erzwingt
+          Pflege).
         </p>
       </section>
     </main>
