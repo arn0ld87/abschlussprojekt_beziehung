@@ -2,7 +2,7 @@ import { FotoService } from "../../domain/foto/foto-service";
 import { FotoRepository } from "../../infrastructure/db/foto-repository";
 import { LokalerDateiAdapter } from "../../infrastructure/datei/lokaler-datei-adapter";
 
-let fotoServiceInstance: FotoService;
+let fotoServiceInstance: FotoService | null = null;
 
 export function getDefaultFotoService(): FotoService {
   if (!fotoServiceInstance) {
@@ -14,6 +14,6 @@ export function getDefaultFotoService(): FotoService {
   return fotoServiceInstance;
 }
 
-export function setGlobalFotoService(service: FotoService): void {
+export function setGlobalFotoService(service: FotoService | null): void {
   fotoServiceInstance = service;
 }

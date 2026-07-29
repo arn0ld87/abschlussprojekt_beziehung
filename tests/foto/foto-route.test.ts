@@ -225,4 +225,27 @@ describe("Foto Route Handlers Integration", () => {
     const secondGet = await GET(req2, { params: Promise.resolve({ id: k.id, sid: s.id }) });
     expect(secondGet.status).toBe(304);
   });
+
+  it("GET /foto returns 404 NOT_FOUND when schueler lookup fails with a coded NOT_FOUND", async () => {
+    await setSession(mockUser);
+    // Keine Klasse/Schueler angelegt -> getById wirft kodierte SchuelerError/KlassenError NOT_FOUND.
+    const res = await GET(req("GET"), { params: Promise.resolve({ id: "kl1", sid: "s1" }) });
+    expect(res.status).toBe(404);
+    const data = await res.json();
+    expect(data.code).toBe("NOT_FOUND");
+  });
+
+  it("GET /foto returns 500 INTERNAL_ERROR when schueler lookup throws an uncoded error", async () => {
+    await setSession(mockUser);
+    // Infrastruktur-Fehler ohne code darf NICHT als NOT_FOUND/404 durchgehen.
+    const throwingService = { getById: async () => { throw new Error("infra boom"); } } as unknown as SchuelerService;
+    setGlobalSchuelerService(throwingService);
+
+    const res = await GET(req("GET"), { params: Promise.resolve({ id: "kl1", sid: "s1" }) });
+    expect(res.status).toBe(500);
+    const data = await res.json();
+    expect(data.code).toBe("INTERNAL_ERROR");
+    // Keine internen Details nach aussen geben.
+    expect(JSON.stringify(data)).not.toContain("infra boom");
+  });
 });

@@ -40,6 +40,7 @@ export default function SitzregelEditor({ klasseId, schueler, allSchueler, onClo
   const [haerte, setHaerte] = useState<SitzregelItem['haerte']>('hard');
   const [gewicht, setGewicht] = useState<number>(0.5);
   const [adding, setAdding] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -64,6 +65,17 @@ export default function SitzregelEditor({ klasseId, schueler, allSchueler, onClo
       ignore = true;
     };
   }, [klasseId, schueler.id]);
+
+  // Modal per Escape schliessbar machen (A11y). Waehrend einer laufenden
+  // Aktion (Hinzufuegen/Loeschen) nicht schliessen, um Calls nicht zu verwerfen.
+  useEffect(() => {
+    if (adding || deletingId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [adding, deletingId, onClose]);
 
   const fetchRegeln = useCallback(async () => {
     try {
@@ -113,6 +125,8 @@ export default function SitzregelEditor({ klasseId, schueler, allSchueler, onClo
   };
 
   const handleDeleteRegel = async (regelId: string) => {
+    if (deletingId) return;
+    setDeletingId(regelId);
     try {
       const res = await fetch(`/api/klassen/${klasseId}/schueler/${schueler.id}/sitzregeln/${regelId}`, {
         method: 'DELETE',
@@ -122,6 +136,8 @@ export default function SitzregelEditor({ klasseId, schueler, allSchueler, onClo
       onUpdated();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Fehler beim Löschen.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -129,6 +145,9 @@ export default function SitzregelEditor({ klasseId, schueler, allSchueler, onClo
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sitzregel-editor-titel"
       style={{
         position: 'fixed',
         top: 0,
@@ -152,7 +171,7 @@ export default function SitzregelEditor({ klasseId, schueler, allSchueler, onClo
           boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
         }}
       >
-        <h3>Sitzregeln für {schueler.name}</h3>
+        <h3 id="sitzregel-editor-titel">Sitzregeln für {schueler.name}</h3>
 
         {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>{error}</p>}
 
@@ -184,8 +203,8 @@ export default function SitzregelEditor({ klasseId, schueler, allSchueler, onClo
                         [{r.haerte === 'hard' ? 'Harte Regel' : `Gewichtet: ${r.gewicht}`}]
                       </span>
                     </div>
-                    <Button variant="ghost" onClick={() => handleDeleteRegel(r.id)}>
-                      Entfernen
+                    <Button variant="ghost" onClick={() => handleDeleteRegel(r.id)} disabled={deletingId === r.id}>
+                      {deletingId === r.id ? 'Entferne...' : 'Entfernen'}
                     </Button>
                   </li>
                 );
@@ -201,6 +220,7 @@ export default function SitzregelEditor({ klasseId, schueler, allSchueler, onClo
             <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '0.25rem' }}>Regeltyp</label>
             <select
               value={typ}
+              autoFocus
               onChange={(e) => setTyp(e.target.value as SitzregelItem['typ'])}
               style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
             >

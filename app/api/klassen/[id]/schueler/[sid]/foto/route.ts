@@ -42,6 +42,30 @@ function secureImageHeaders(buffer: Buffer, mimeType: string) {
   };
 }
 
+// Bekannte kodierte ServiceError-Codes der Schueler-Domaene. Ein Fehler mit
+// einem dieser Codes ist ein erwarteter fachlicher Fehler (-> passender
+// Status + Meldung). Ein Fehler OHNE bekannten Code ist ein unerwarteter
+// Infrastruktur-/Programmierfehler -> 500 INTERNAL_ERROR ohne interne Details.
+const SCHUELER_ERROR_CODES = new Set(["NOT_FOUND", "FORBIDDEN", "VALIDATION_ERROR"]);
+
+function schuelerLookupErrorResponse(err: unknown) {
+  const e = err as ServiceError;
+  const headers = {
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff",
+  };
+  if (e.code && SCHUELER_ERROR_CODES.has(e.code)) {
+    return NextResponse.json(
+      { code: e.code, error: { code: e.code, message: e.message } },
+      { status: statusForCode(e.code), headers }
+    );
+  }
+  return NextResponse.json(
+    { code: "INTERNAL_ERROR", error: { code: "INTERNAL_ERROR", message: "Interner Fehler." } },
+    { status: 500, headers }
+  );
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string; sid: string }> }
@@ -55,11 +79,7 @@ export async function GET(
   try {
     await schuelerService.getById(user.id, klasseId, schuelerId);
   } catch (err: unknown) {
-    const e = err as ServiceError;
-    return NextResponse.json(
-      { code: e.code ?? "NOT_FOUND", error: { code: e.code ?? "NOT_FOUND", message: e.message } },
-      { status: statusForCode(e.code) }
-    );
+    return schuelerLookupErrorResponse(err);
   }
 
   const fotoService = getDefaultFotoService();
@@ -117,11 +137,7 @@ export async function POST(
   try {
     await schuelerService.getById(user.id, klasseId, schuelerId);
   } catch (err: unknown) {
-    const e = err as ServiceError;
-    return NextResponse.json(
-      { code: e.code ?? "NOT_FOUND", error: { code: e.code ?? "NOT_FOUND", message: e.message } },
-      { status: statusForCode(e.code) }
-    );
+    return schuelerLookupErrorResponse(err);
   }
 
   const formData = await req.formData().catch(() => null);
@@ -203,11 +219,7 @@ export async function DELETE(
   try {
     await schuelerService.getById(user.id, klasseId, schuelerId);
   } catch (err: unknown) {
-    const e = err as ServiceError;
-    return NextResponse.json(
-      { code: e.code ?? "NOT_FOUND", error: { code: e.code ?? "NOT_FOUND", message: e.message } },
-      { status: statusForCode(e.code) }
-    );
+    return schuelerLookupErrorResponse(err);
   }
 
   const fotoService = getDefaultFotoService();

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Button from '../../../../../src/ui/Button';
 import { SchuelerData } from './SchuelerListe';
 import { FotoUploader } from './FotoUploader';
@@ -22,6 +22,18 @@ export default function SchuelerFormular({ klasseId, schueler, onClose, onSaved 
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Modal per Escape schliessbar machen (A11y). Waehrend des Speicherns
+  // verhindern wir das Schliessen, um einen halbfertigen Persistenz-Call nicht
+  // zu verwerfen.
+  useEffect(() => {
+    if (submitting) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [submitting, onClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +76,9 @@ export default function SchuelerFormular({ klasseId, schueler, onClose, onSaved 
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="schueler-formular-titel"
       style={{
         position: 'fixed',
         top: 0,
@@ -87,7 +102,7 @@ export default function SchuelerFormular({ klasseId, schueler, onClose, onSaved 
           boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)',
         }}
       >
-        <h3>{schueler ? 'Schülerprofil bearbeiten' : 'Neuen Schüler anlegen'}</h3>
+        <h3 id="schueler-formular-titel">{schueler ? 'Schülerprofil bearbeiten' : 'Neuen Schüler anlegen'}</h3>
         {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>{error}</p>}
 
         {schueler && (
@@ -106,6 +121,7 @@ export default function SchuelerFormular({ klasseId, schueler, onClose, onSaved 
             <input
               type="text"
               required
+              autoFocus
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="z. B. Max Mustermann"
