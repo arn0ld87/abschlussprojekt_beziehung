@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { users, sessions, accounts, verifications } from "../../src/infrastructure/db/schema";
-import { getDb } from "../../src/infrastructure/db/client";
+import { getDb, closeDb } from "../../src/infrastructure/db/client";
 import drizzleConfig from "../../drizzle.config";
 
 describe("Database Infrastructure & Migrations (M1 #42)", () => {
@@ -41,5 +41,20 @@ describe("Database Infrastructure & Migrations (M1 #42)", () => {
 
   it("exports getDb client function", () => {
     expect(typeof getDb).toBe("function");
+  });
+});
+
+describe("Database Client Security", () => {
+  it("throws an error when no connection string is provided and DATABASE_URL is unset", async () => {
+    const originalUrl = process.env.DATABASE_URL;
+    delete process.env.DATABASE_URL;
+
+    await closeDb();
+
+    expect(() => getDb()).toThrow("DATABASE_URL is required.");
+
+    if (originalUrl) {
+      process.env.DATABASE_URL = originalUrl;
+    }
   });
 });
