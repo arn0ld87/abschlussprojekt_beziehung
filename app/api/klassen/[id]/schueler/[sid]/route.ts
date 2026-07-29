@@ -50,7 +50,12 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
 
   try {
     await service.delete(user.id, klasseId, schuelerId, async (sid) => {
-      await fotoService.deleteFoto(sid);
+      try {
+        const fotoService = getDefaultFotoService();
+        await fotoService.deleteFoto(sid);
+      } catch {
+        // Best-effort cleanup
+      }
     });
     return new NextResponse(null, { status: 204 });
   } catch (err) {
