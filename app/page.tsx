@@ -1,85 +1,15 @@
-import { readdirSync, type Dirent } from "node:fs";
-import { join, relative, sep } from "node:path";
 import type { CSSProperties } from "react";
+import { listRoutes, getMeta, type RouteStatus } from "./route-meta";
 
 // Dev-Übersicht zur Laufzeit: scannt app/ nach page.tsx/route.ts.
-// Neue Routes erscheinen automatisch; nur Status-Badges sind unten annotiert.
+// Status-Badges kommen aus route-meta.ts (Single Source of Truth);
+// ein Coverage-Test stellt sicher, dass jede Route dort gepflegt ist.
 export const dynamic = "force-dynamic";
 
-type RouteKind = "page" | "api";
-interface ScannedRoute {
-  path: string;
-  kind: RouteKind;
-}
-
-function scanRoutes(dir: string, appRoot: string, acc: ScannedRoute[]) {
-  let entries: Dirent[];
-  try {
-    entries = readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return;
-  }
-  for (const e of entries) {
-    if (e.isDirectory()) {
-      // _-prefixed Verzeichnisse (_components, _not-found, node_modules) überspringen.
-      if (e.name.startsWith("_") || e.name === "node_modules") continue;
-      scanRoutes(join(dir, e.name), appRoot, acc);
-      continue;
-    }
-    if (e.name !== "page.tsx" && e.name !== "page.ts" && e.name !== "route.ts") continue;
-    const rel = relative(appRoot, dir).split(sep).join("/");
-    const segments = rel
-      .split("/")
-      .filter((s) => !(s.startsWith("(") && s.endsWith(")")) && s.length > 0);
-    const path = "/" + segments.join("/");
-    const kind: RouteKind = e.name.startsWith("route") ? "api" : "page";
-    acc.push({ path: path === "/" ? path : path.replace(/\/+$/, "") || "/", kind });
-  }
-}
-
-function listRoutes(): ScannedRoute[] {
-  const acc: ScannedRoute[] = [];
-  scanRoutes(join(process.cwd(), "app"), join(process.cwd(), "app"), acc);
-  // Dedup (page+route im selben Segment) und sortieren.
-  const seen = new Set<string>();
-  return acc
-    .filter((r) => (seen.has(r.path + ":" + r.kind) ? false : (seen.add(r.path + ":" + r.kind), true)))
-    .sort((a, b) =>
-      a.kind !== b.kind ? (a.kind === "page" ? -1 : 1) : a.path.localeCompare(b.path)
-    );
-}
-
-// Status-Annotationen für bekannte Routes. Nicht gelistete Routes → 🟢 (unbestätigt).
-type Status = "green" | "yellow" | "red";
-const STATUS_META: Record<Status, { emoji: string; text: string; color: string }> = {
+const STATUS_META: Record<RouteStatus, { emoji: string; text: string; color: string }> = {
   green: { emoji: "🟢", text: "geht", color: "#15803d" },
   yellow: { emoji: "🟡", text: "Login nötig", color: "#b45309" },
   red: { emoji: "🔴", text: "geplant / fehlt", color: "#b91c1c" },
-};
-
-const PAGE_HINTS: Record<string, { status: Status; hint?: string }> = {
-  "/": { status: "green" },
-  "/signin": { status: "green", hint: "Login-/Registrierungsseite" },
-  "/design": { status: "green", hint: "Design-System" },
-  "/protected": { status: "yellow", hint: "Login nötig" },
-  "/klassen": { status: "yellow", hint: "Klassenliste, Login nötig" },
-  "/klassen/neu": { status: "yellow", hint: "Neue Klasse, Login nötig" },
-  "/klassen/[id]": { status: "yellow", hint: "Klassendetail — Klassen-ID nötig, ab /klassen navigieren" },
-  "/klassen/[id]/edit": { status: "yellow", hint: "Klasse bearbeiten — ab /klassen navigieren" },
-};
-
-const API_HINTS: Record<string, { status: Status; hint?: string }> = {
-  "/api/health": { status: "green" },
-  "/api/auth/sign-in": { status: "green" },
-  "/api/auth/sign-out": { status: "green" },
-  "/api/auth/sign-up": { status: "green" },
-  "/api/klassen": { status: "green" },
-  "/api/klassen/[id]": { status: "green" },
-  "/api/klassen/[id]/schueler": { status: "green" },
-  "/api/klassen/[id]/schueler/[sid]": { status: "green" },
-  "/api/klassen/[id]/schueler/[sid]/foto": { status: "green", hint: "M1-45" },
-  "/api/klassen/[id]/schueler/[sid]/sitzregeln": { status: "green", hint: "M1-44" },
-  "/api/klassen/[id]/schueler/[sid]/sitzregeln/[rid]": { status: "green", hint: "M1-44" },
 };
 
 function hrefFor(path: string): string {
@@ -122,15 +52,14 @@ export default function HomePage() {
       <h1>Abschlussprojekt Beziehung — Dev-Übersicht</h1>
       <p style={{ color: "#555" }}>
         Live aus <code>app/</code> gescannt — {pages.length} Seiten, {apis.length} API-Routes im
-        aktuellen Stand. Status: 🟢 geht · 🟡 Login nötig · 🔴 geplant / fehlt. Nicht annotierte
-        Routes sind 🟢 (Status ggf. selbst prüfen).
+        aktuellen Stand. Status: 🟢 geht · 🟡 Login nötig · 🔴 geplant / fehlt.
       </p>
 
       <section style={{ marginTop: "1.5rem" }}>
         <h2 style={{ fontSize: "1.1rem" }}>Seiten</h2>
         <div style={{ display: "grid", gap: "0.5rem", marginTop: "0.75rem" }}>
           {pages.map((r) => {
-            const meta = PAGE_HINTS[r.path] ?? { status: "green" as Status };
+            const meta = getMeta(r.kind, r.path);
             const b = STATUS_META[meta.status];
             return (
               <div key={r.path} style={cardStyle}>
@@ -165,7 +94,7 @@ export default function HomePage() {
         <h2 style={{ fontSize: "1.1rem" }}>API-Routes</h2>
         <div style={{ display: "grid", gap: "0.4rem", marginTop: "0.75rem" }}>
           {apis.map((r) => {
-            const meta = API_HINTS[r.path] ?? { status: "green" as Status };
+            const meta = getMeta(r.kind, r.path);
             const b = STATUS_META[meta.status];
             return (
               <div
@@ -194,8 +123,8 @@ export default function HomePage() {
         <p style={{ color: "#555", marginTop: "0.5rem", lineHeight: 1.5 }}>
           Dev-Helper (Throwaway). Dynamische Routes wie <code>/klassen/[id]</code> brauchen eine
           echte ID — am besten über <a href="/klassen" style={{ color: "#1d4ed8" }}>/klassen</a>{" "}
-          navigieren. Die Liste wird zur Laufzeit aus dem Dateisystem erzeugt und bleibt ohne
-          manuelle Pflege aktuell.
+          navigieren. Die Liste wird zur Laufzeit aus dem Dateisystem erzeugt; Status-Badges aus{" "}
+          <code>route-meta.ts</code> (Coverage-Test erzwingt Pflege).
         </p>
       </section>
     </main>
