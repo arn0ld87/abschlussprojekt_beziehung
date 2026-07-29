@@ -1,7 +1,7 @@
 # Projektstatus
 
 **Stand:** 29.07.2026<br>
-**Phase:** M0 — Foundation inhaltlich abgeschlossen; M1 — Klassen ist die nächste Frontier<br>
+**Phase:** M0 — Foundation abgeschlossen (29.07.2026, formale Schließung erfolgt); M1 — Klassen ist die aktuelle Frontier<br>
 **Produktcode:** noch nicht begonnen
 
 ## Verifiziert vorhanden
@@ -37,7 +37,7 @@ M0 — Foundation ist am 29.07.2026 inhaltlich abgeschlossen. Jeder M0-Slice ist
 | Designsystem Grundlage | [#21](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/21) | [#30](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/30) | `954f1d9` |
 | Runtime-Baseline Node 24 LTS und Dependency-Updates | [#31](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/31) | [#37](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/37) | `da673c8` |
 
-Der GitHub-Milestone `M0 — Foundation` enthält das Parent-Issue [#2](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/2) und alle sieben M0-Child-Issues (#17, #18, #19, #20, #21, #27, #31). Die formale Schließung von Milestone und Parent-Issue ist noch ausstehend und erfolgt durch den Lead.
+Der GitHub-Milestone [`M0 — Foundation`](https://github.com/arn0ld87/abschlussprojekt_beziehung/milestone/1) wurde am 29.07.2026 geschlossen (`closed_at=2026-07-29T00:02:34Z`, `open_issues=0`, `closed_issues=9`). Er enthält das Parent-Issue [#2](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/2) und alle sieben M0-Child-Issues (#17, #18, #19, #20, #21, #27, #31); die zugehörige M0-Akzeptanz [#22](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/22) ist gemergt. Das Parent-Issue und alle sieben Child-Issues sind `CLOSED`.
 
 ## Nächster Freigabepunkt
 
@@ -47,7 +47,7 @@ Die einzige aktuelle Frontier ist [M1 — Klassen](https://github.com/arn0ld87/a
 
 | Milestone | Parent-Issue | Status |
 |---|---|---|
-| M0 | [#2 Foundation: Repository und Agentenworkflow](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/2) | inhaltlich abgeschlossen (29.07.2026), formale Schließung ausstehend |
+| M0 | [#2 Foundation: Repository und Agentenworkflow](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/2) | abgeschlossen (29.07.2026, Milestone und Issues formal geschlossen) |
 | M1 | [#3 Klassen: Auth, Klassen und Schülerprofile](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) | einzige aktuelle Frontier |
 | M2 | [#4 Raumeditor: Maße, Möbel und Sitzplätze](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) | keine offenen Blocker, Reihenfolge nach M1 |
 | M3 | [#5 Persistente Pläne: Autosave, Versionen und Restore](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) | blockiert durch M1 und M2 |
