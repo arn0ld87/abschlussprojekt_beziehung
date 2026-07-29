@@ -33,6 +33,8 @@ export const ROUTE_META: Record<string, RouteMetaEntry> = {
   "api:/api/auth/sign-up": { status: "green" },
   "api:/api/klassen": { status: "green" },
   "api:/api/klassen/[id]": { status: "green" },
+  "api:/api/klassen/[id]/import/preview": { status: "green", hint: "M1-46" },
+  "api:/api/klassen/[id]/import/commit": { status: "green", hint: "M1-46" },
   "api:/api/klassen/[id]/schueler": { status: "green" },
   "api:/api/klassen/[id]/schueler/[sid]": { status: "green" },
   "api:/api/klassen/[id]/schueler/[sid]/foto": { status: "green", hint: "M1-45" },
