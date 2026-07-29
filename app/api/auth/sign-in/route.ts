@@ -8,7 +8,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     let email = "";
     let password = "";
 
-    const contentType = req.headers.get("content-type") ?? "";
+    const contentType = (req.headers.get("content-type") ?? "").toLowerCase();
     if (
       contentType.includes("application/x-www-form-urlencoded") ||
       contentType.includes("multipart/form-data")
@@ -35,7 +35,16 @@ export async function POST(req: Request): Promise<NextResponse> {
     const authService = getDefaultAuthService();
     const { user, session } = await authService.signIn({ email, password });
 
-    const response = NextResponse.json({ user, session }, { status: 200 });
+    const response = NextResponse.json(
+      {
+        user,
+        session: {
+          expiresAt: session.expiresAt,
+          createdAt: session.createdAt,
+        },
+      },
+      { status: 200 },
+    );
 
     response.cookies.set("sitzplan_session", session.id, {
       httpOnly: true,

@@ -62,7 +62,7 @@ describe("Domain Auth Contracts (M1 #42)", () => {
     });
 
     it("rejects a password shorter than 8 characters", () => {
-      expect(PasswordSchema.safeParse("short").success).toBe(false);
+      expect(PasswordSchema.safeParse("1234567").success).toBe(false);
     });
   });
 

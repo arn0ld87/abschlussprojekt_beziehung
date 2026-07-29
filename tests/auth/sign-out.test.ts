@@ -3,7 +3,7 @@ import { POST as signUp } from "../../app/api/auth/sign-up/route";
 import { POST as signOut } from "../../app/api/auth/sign-out/route";
 import { AuthService } from "../../src/services/auth/auth-service";
 import { InMemoryAuthRepository } from "../../src/infrastructure/auth/in-memory-repository";
-import { setGlobalAuthService } from "../../src/services/auth/get-session";
+import { setGlobalAuthService, getSession } from "../../src/services/auth/get-session";
 
 describe("POST /api/auth/sign-out (M1 #42)", () => {
   beforeEach(() => {
@@ -25,10 +25,12 @@ describe("POST /api/auth/sign-out (M1 #42)", () => {
         }),
       }),
     );
+    expect(signUpRes.status).toBe(200);
 
     const setCookie = signUpRes.headers.get("Set-Cookie") ?? "";
     const sessionMatch = setCookie.match(/sitzplan_session=([^;]+)/);
     const sessionId = sessionMatch ? sessionMatch[1] : "";
+    expect(sessionId).not.toBe("");
 
     const req = new Request("http://localhost:3000/api/auth/sign-out", {
       method: "POST",
@@ -46,5 +48,8 @@ describe("POST /api/auth/sign-out (M1 #42)", () => {
 
     const json = await res.json();
     expect(json.success).toBe(true);
+
+    const activeUser = await getSession(req);
+    expect(activeUser).toBeNull();
   });
 });
