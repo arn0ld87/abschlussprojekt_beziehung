@@ -3,6 +3,7 @@ import { requireUser } from '../../../route-helpers';
 import { handleSchuelerApiError } from '../route';
 import { getDefaultSchuelerService } from '../../../../../../src/services/schueler';
 import { getDefaultSitzregelService } from '../../../../../../src/services/sitzregel';
+import { getDefaultFotoService } from '../../../../../../src/services/foto';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,9 +46,12 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
 
   const { id: klasseId, sid: schuelerId } = await props.params;
   const service = getDefaultSchuelerService();
+  const fotoService = getDefaultFotoService();
 
   try {
-    await service.delete(user.id, klasseId, schuelerId);
+    await service.delete(user.id, klasseId, schuelerId, async (sid) => {
+      await fotoService.deleteFoto(sid);
+    });
     return new NextResponse(null, { status: 204 });
   } catch (err) {
     return handleSchuelerApiError(err);

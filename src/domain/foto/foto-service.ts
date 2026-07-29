@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Foto } from "./foto-model";
+import { FotoSchema, type Foto } from "./foto-model";
 import type { FotoRepositoryPort } from "./foto-repository-port";
 import type { DateiPort } from "./datei-port";
 
@@ -35,7 +35,7 @@ export class FotoService {
 
     const pfad = await this.dateiPort.speichere(schuelerId, datei);
 
-    const neuesFoto: Foto = {
+    const neuesFoto: Foto = FotoSchema.parse({
       id: `fot_${randomUUID()}`,
       schuelerId,
       pfad,
@@ -43,7 +43,7 @@ export class FotoService {
       groesse: datei.size,
       createdAt: new Date(),
       updatedAt: new Date(),
-    };
+    });
 
     return this.repository.create(neuesFoto);
   }
@@ -51,7 +51,7 @@ export class FotoService {
   async deleteFoto(schuelerId: string): Promise<void> {
     const foto = await this.repository.findBySchuelerId(schuelerId);
     if (!foto) {
-      throw new FotoServiceError("NOT_FOUND", "Foto nicht gefunden.");
+      return;
     }
 
     await this.dateiPort.loesche(foto.pfad);

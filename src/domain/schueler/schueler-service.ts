@@ -78,8 +78,11 @@ export class SchuelerService {
     });
   }
 
-  async delete(userId: string, klasseId: string, schuelerId: string): Promise<void> {
+  async delete(userId: string, klasseId: string, schuelerId: string, onSchuelerDeleted?: (sid: string) => Promise<void>): Promise<void> {
     await this.getById(userId, klasseId, schuelerId);
     await this.repository.softDelete(schuelerId);
+    if (onSchuelerDeleted) {
+      await onSchuelerDeleted(schuelerId);
+    }
   }
 }
