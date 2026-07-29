@@ -35,13 +35,15 @@ export function parseCsv(csvText: string): Record<string, string>[] {
       } else if (char === delimiter) {
         currentRow.push(currentVal);
         currentVal = '';
-      } else if (char === '\r') {
-
-      } else if (char === '\n') {
+      } else if (char === '\r' || char === '\n') {
         currentRow.push(currentVal);
         rows.push(currentRow);
         currentRow = [];
         currentVal = '';
+        // CRLF erzeugt genau einen Datensatzabschluss.
+        if (char === '\r' && nextChar === '\n') {
+          i++;
+        }
       } else {
         currentVal += char;
       }

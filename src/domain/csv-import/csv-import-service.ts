@@ -60,13 +60,13 @@ export class CsvImportService {
       const row = validated[i];
       if (row.errors.length > 0) {
         errorCount++;
-        errors.push(`Zeile ${i + 1}: ${row.errors.join(', ')}`);
+        errors.push(`Zeile ${i + 2}: ${row.errors.join(', ')}`);
         continue;
       }
 
       if (!row.schueler) {
         errorCount++;
-        errors.push(`Zeile ${i + 1}: Schüler-Daten fehlen.`);
+        errors.push(`Zeile ${i + 2}: Schüler-Daten fehlen.`);
         continue;
       }
 
@@ -107,13 +107,13 @@ export class CsvImportService {
               await this.sitzregelService.create(userId, klasseId, schuelerId, sr);
             } catch (e: unknown) {
               errorCount++;
-              errors.push(`Zeile ${i + 1} (Sitzregel): ${e instanceof Error ? e.message : 'Fehler'}`);
+              errors.push(`Zeile ${i + 2} (Sitzregel): ${e instanceof Error ? e.message : 'Fehler'}`);
             }
           }
         }
       } catch (e: unknown) {
         errorCount++;
-        errors.push(`Zeile ${i + 1}: ${e instanceof Error ? e.message : 'Fehler'}`);
+        errors.push(`Zeile ${i + 2}: ${e instanceof Error ? e.message : 'Fehler'}`);
       }
     }
 
