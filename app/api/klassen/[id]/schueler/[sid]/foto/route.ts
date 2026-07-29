@@ -13,7 +13,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   try {
     await schuelerService.getById(user.id, klasseId, schuelerId);
   } catch (err: unknown) {
-    return NextResponse.json({ error: (err as any).message }, { status: (err as any).code === "FORBIDDEN" ? 403 : 404 });
+    return NextResponse.json({ error: (err as Error & { code?: string }).message }, { status: (err as Error & { code?: string }).code === "FORBIDDEN" ? 403 : 404 });
   }
 
   const fotoService = getDefaultFotoService();
@@ -54,7 +54,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   try {
     await schuelerService.getById(user.id, klasseId, schuelerId);
   } catch (err: unknown) {
-    return NextResponse.json({ error: (err as any).message }, { status: (err as any).code === "FORBIDDEN" ? 403 : 404 });
+    return NextResponse.json({ error: (err as Error & { code?: string }).message }, { status: (err as Error & { code?: string }).code === "FORBIDDEN" ? 403 : 404 });
   }
 
   const formData = await req.formData().catch(() => null);
@@ -72,8 +72,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const foto = await fotoService.uploadFoto(schuelerId, datei);
     return NextResponse.json(foto, { status: 201 });
   } catch (err: unknown) {
-    const status = (err as any).code === "VALIDATION_ERROR" ? 422 : 500;
-    return NextResponse.json({ error: (err as any).message }, { status });
+    const status = (err as Error & { code?: string }).code === "VALIDATION_ERROR" ? 422 : 500;
+    return NextResponse.json({ error: (err as Error & { code?: string }).message }, { status });
   }
 }
 
@@ -87,7 +87,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   try {
     await schuelerService.getById(user.id, klasseId, schuelerId);
   } catch (err: unknown) {
-    return NextResponse.json({ error: (err as any).message }, { status: (err as any).code === "FORBIDDEN" ? 403 : 404 });
+    return NextResponse.json({ error: (err as Error & { code?: string }).message }, { status: (err as Error & { code?: string }).code === "FORBIDDEN" ? 403 : 404 });
   }
 
   const fotoService = getDefaultFotoService();
@@ -95,9 +95,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     await fotoService.deleteFoto(schuelerId);
     return new NextResponse(null, { status: 204 });
   } catch (err: unknown) {
-    if ((err as any).code === "NOT_FOUND") {
+    if ((err as Error & { code?: string }).code === "NOT_FOUND") {
       return new NextResponse(null, { status: 404 });
     }
-    return NextResponse.json({ error: (err as any).message }, { status: 500 });
+    return NextResponse.json({ error: (err as Error & { code?: string }).message }, { status: 500 });
   }
 }

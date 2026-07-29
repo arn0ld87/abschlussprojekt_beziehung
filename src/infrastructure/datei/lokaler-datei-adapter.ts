@@ -33,9 +33,9 @@ export class LokalerDateiAdapter implements DateiPort {
     const vollerPfad = path.join(this.baseDir, pfad);
     try {
       await fs.unlink(vollerPfad);
-    } catch (error: any) {
-      if ((error as any).code !== "ENOENT") {
-        throw error;
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw err;
       }
     }
   }
@@ -44,11 +44,11 @@ export class LokalerDateiAdapter implements DateiPort {
     const vollerPfad = path.join(this.baseDir, pfad);
     try {
       return await fs.readFile(vollerPfad);
-    } catch (error: any) {
-      if ((error as any).code === "ENOENT") {
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
         return null;
       }
-      throw error;
+      throw err;
     }
   }
 }
