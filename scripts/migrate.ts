@@ -11,7 +11,7 @@ async function main() {
     return;
   }
 
-  const targetUrl = connectionString ?? "postgres://postgres:postgres@localhost:5432/sitzplan";
+  const targetUrl = connectionString ?? "postgres://postgres:changeme@localhost:5432/sitzplan";
 
   console.log("Running database migrations.");
   const pool = new Pool({ connectionString: targetUrl });

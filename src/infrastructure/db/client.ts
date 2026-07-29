@@ -14,7 +14,7 @@ export function getDb(connectionString?: string): NodePgDatabase<typeof schema> 
     throw new Error("DATABASE_URL is required in production environment.");
   }
 
-  const targetUrl = url ?? "postgres://postgres:postgres@localhost:5432/sitzplan";
+  const targetUrl = url ?? "postgres://postgres:changeme@localhost:5432/sitzplan";
 
   pool = new Pool({
     connectionString: targetUrl,

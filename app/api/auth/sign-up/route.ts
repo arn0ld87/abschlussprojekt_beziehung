@@ -56,6 +56,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     return response;
   } catch (err) {
+    console.error("Sign-up error:", err);
     if (err instanceof AuthError) {
       if (err.code === "USER_ALREADY_EXISTS") {
         return NextResponse.json(
