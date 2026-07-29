@@ -2,7 +2,7 @@
 
 **Stand:** 29.07.2026<br>
 **Phase:** M0 — Foundation abgeschlossen (29.07.2026, formale Schließung erfolgt); M1 — Klassen ist die aktuelle Frontier<br>
-**Produktcode:** noch nicht begonnen
+**Produktcode:** Auth-Grundlage (M1 #42) und Klassenverwaltung (M1 #43) vorhanden
 
 ## Verifiziert vorhanden
 
@@ -17,10 +17,13 @@
 - Docker-Compose-Definition und Dockerfile für Anwendung und PostgreSQL samt Healthcheck-Endpunkt `/api/health` mit echtem `SELECT 1` (M0 #20)
 - verifizierte Docker-Laufzeit: `docker compose up -d --build` startet Anwendung und PostgreSQL, `/api/health` antwortet erfolgreich nach `SELECT 1` (M0 #20 und #31)
 - Designsystem-Grundlage mit Tokens, Basis-Komponenten und Playground-Seite (M0 #21)
+- Auth-Grundlage mit E-Mail/Passwort, Session-Verwaltung, Drizzle-Migration und geschützter Beispielseite (M1 #42)
+- Klassenverwaltung mit CRUD, Soft-Delete, Zod-Validierung, framework-freiem KlassenService, Route Handlern und UI-Seiten (M1 #43)
 
 ## Noch nicht vorhanden
 
-- Datenbankschema und Migrationen
+- Schülerprofile, Sitzregeln, Foto-Upload, CSV-Import
+- Raumvorlagen und Sitzplan-Editor
 - Release-Artefakt
 
 ## M0-Abschluss

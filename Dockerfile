@@ -27,4 +27,4 @@ COPY --from=build --chown=bun:bun /app/drizzle ./drizzle
 COPY --from=build --chown=bun:bun /app/scripts ./scripts
 USER bun
 EXPOSE 3000
-CMD ["bun", "run", "dist/server.js"]
+CMD ["sh", "-c", "bun run scripts/migrate.ts && bun run dist/server.js"]
