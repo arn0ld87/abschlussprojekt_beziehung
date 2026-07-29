@@ -91,7 +91,8 @@ if rg -n "$placeholder_pattern" \
   README.md AGENTS.md CLAUDE.md CONTEXT.md ROADMAP.md CHANGELOG.md \
   CONTRIBUTING.md SECURITY.md docs .claude .github scripts \
   --glob '*.md' --glob '*.yml' --glob '*.yaml' --glob '*.sh' \
-  --glob '!docs/superpowers/plans/**' --glob '!scripts/check-docs.sh'; then
+  --glob '!docs/superpowers/plans/**' --glob '!scripts/check-docs.sh' \
+  --glob '!.claude/worktrees/**'; then
   echo 'placeholder found' >&2
   exit 1
 fi

@@ -126,3 +126,16 @@ describe("CLAUDE.md lists the executable M0 #27 command set", () => {
     expect(claude).toContain("Dokumentationsgate: `bash scripts/check-docs.sh`");
   });
 });
+
+describe("scripts/check-docs.sh placeholder scan (issue #34)", () => {
+  const checkDocs = read("scripts/check-docs.sh");
+
+  it("excludes .claude/worktrees/** so local agent worktrees do not poison the gate", () => {
+    expect(checkDocs).toContain("--glob '!.claude/worktrees/**'");
+  });
+
+  it("keeps the existing excludes for docs plans and the gate script itself", () => {
+    expect(checkDocs).toContain("--glob '!docs/superpowers/plans/**'");
+    expect(checkDocs).toContain("--glob '!scripts/check-docs.sh'");
+  });
+});
