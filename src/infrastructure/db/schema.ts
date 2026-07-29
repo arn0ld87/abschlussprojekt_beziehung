@@ -75,3 +75,15 @@ export const verifications = pgTable("verifications", {
     .defaultNow()
     .notNull(),
 });
+
+export const klassen = pgTable("klassen", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  notizen: text("notizen"),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (table) => ({
+  userIdIdx: index("klassen_user_id_idx").on(table.userId),
+}));

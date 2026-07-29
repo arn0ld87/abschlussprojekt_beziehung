@@ -18,8 +18,11 @@ describe("docs/STATUS.md", () => {
     expect(notYetSection).not.toContain("automatisierte Produkt-Tests");
   });
 
-  it("still lists the remaining outstanding foundation work (Docker runtime shipped in M0 #20/#31)", () => {
-    expect(notYetSection).toContain("Datenbankschema und Migrationen");
+  it("no longer lists database schema as missing (shipped in M1 #42/#43)", () => {
+    expect(notYetSection).not.toContain("Datenbankschema und Migrationen");
+  });
+
+  it("still lists the remaining M1 work and release artifact as not yet present", () => {
     expect(notYetSection).toContain("Release-Artefakt");
     expect(notYetSection).not.toContain("Docker-Laufzeit");
   });
