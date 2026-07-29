@@ -4,9 +4,10 @@ import { InMemoryAuthRepository } from "../../src/infrastructure/auth/in-memory-
 
 describe("AuthService & Session Lifecycle (M1 #42)", () => {
   let authService: AuthService;
+  let repo: InMemoryAuthRepository;
 
   beforeEach(() => {
-    const repo = new InMemoryAuthRepository();
+    repo = new InMemoryAuthRepository();
     authService = new AuthService(repo);
   });
 
@@ -98,6 +99,26 @@ describe("AuthService & Session Lifecycle (M1 #42)", () => {
 
       const validAfter = await authService.validateSession(session.id);
       expect(validAfter).toBeNull();
+    });
+
+    it("returns null and deletes session if session is expired", async () => {
+      const { session } = await authService.signUp({
+        email: "expired@school.de",
+        password: "securePassword123!",
+      });
+
+      const dbSession = await repo.findSessionById(session.id);
+      expect(dbSession).not.toBeNull();
+
+      if (dbSession) {
+        dbSession.expiresAt = new Date(Date.now() - 1000);
+      }
+
+      const validAfter = await authService.validateSession(session.id);
+      expect(validAfter).toBeNull();
+
+      const deletedSession = await repo.findSessionById(session.id);
+      expect(deletedSession).toBeNull();
     });
   });
 
