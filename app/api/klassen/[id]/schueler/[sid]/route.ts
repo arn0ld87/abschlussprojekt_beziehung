@@ -46,7 +46,6 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
 
   const { id: klasseId, sid: schuelerId } = await props.params;
   const service = getDefaultSchuelerService();
-  const fotoService = getDefaultFotoService();
 
   try {
     await service.delete(user.id, klasseId, schuelerId, async (sid) => {
