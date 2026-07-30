@@ -158,6 +158,22 @@ describe("ci workflow contract", () => {
     );
   });
 
+  // Ein Passwort im Workflow waere ein hartcodiertes Credential im
+  // Repository und laesst den Secret-Scanner (GitGuardian) fehlschlagen.
+  // Der ephemere Service-Container braucht keins: trust-Auth genuegt.
+  it("keeps the postgres service password-free so no credential is committed", () => {
+    const testJob = jobs.test!;
+    const postgres = testJob.services!.postgres!;
+    expect(
+      postgres.env?.POSTGRES_PASSWORD,
+      "postgres service must not hardcode a password",
+    ).toBeUndefined();
+    expect(postgres.env?.POSTGRES_HOST_AUTH_METHOD).toBe("trust");
+    for (const key of ["DATABASE_URL", "TEST_DATABASE_URL"] as const) {
+      expect(testJob.env?.[key], `${key} must not embed a password`).not.toMatch(/:[^/@]+@/);
+    }
+  });
+
   it("build job: checkout, setup-node (node 24), setup-bun (bun-version-file), install, run build", () => {
     assertJob("build", jobs.build!, [
       CHECKOUT_STEP,

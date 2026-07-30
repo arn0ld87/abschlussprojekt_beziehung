@@ -83,12 +83,13 @@ jobs:
     services:
       postgres:
         image: postgres:16.4-alpine
-        # Wegwerf-Zugangsdaten eines ephemeren CI-Service-Containers,
-        # nicht erreichbar ausserhalb des Runners und kein Secret.
+        # Kein Passwort: der Container ist ephemer, nur ueber localhost des
+        # Runners erreichbar und wird nach dem Job verworfen. trust-Auth
+        # haelt damit jedes Credential aus dem Repository heraus.
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: sitzplan_test
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
@@ -97,8 +98,8 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/sitzplan_test
-      TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/sitzplan_test
+      DATABASE_URL: postgres://postgres@localhost:5432/sitzplan_test
+      TEST_DATABASE_URL: postgres://postgres@localhost:5432/sitzplan_test
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
