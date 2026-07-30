@@ -10,11 +10,22 @@ export interface RaumCanvasProps {
   laengeCm: number;
   rasterCm: number;
   objekte?: RaumObjektV1[];
+  /** ID des aktuell ausgewählten Objekts (M2 #52) */
+  ausgewaehltId?: string | null;
+  /** Auswahl-Callback — Mausklick/Tap oder Tastatur über die Objektliste */
+  onAuswaehlen?: (objektId: string) => void;
+  /** Callback nach abgeschlossener Drag-Interaktion (Zentimeterwerte) */
+  onBewegt?: (objektId: string, xCm: number, yCm: number) => void;
 }
 
 const MAX_HOEHE_PX = 520;
 const FALLBACK_BREITE_PX = 720;
 const RAND_PX = 1;
+
+/** Minimale Konva-Event-Form — der Renderer bleibt framework-frei testbar. */
+interface DragEndEvent {
+  target: { x(): number; y(): number };
+}
 
 // Rein darstellerische Farben pro Objektart — keine Fachlogik.
 const OBJEKT_FARBEN: Record<RaumObjektTyp, { fill: string; stroke: string }> = {
@@ -26,10 +37,22 @@ const OBJEKT_FARBEN: Record<RaumObjektTyp, { fill: string; stroke: string }> = {
   window: { fill: '#e0f2fe', stroke: '#0369a1' },
 };
 
-// React-Konva-Editorfläche (M2 #50/#51): rendert ausschließlich aus dem
-// validierten Domänenzustand; es werden keine Konva-Nodes persistiert.
-// Der Renderer enthält keine Persistenzlogik — Objekte kommen als Props.
-export default function RaumCanvas({ breiteCm, laengeCm, rasterCm, objekte = [] }: RaumCanvasProps) {
+const AUSWAHL_FARBE = '#dc2626';
+
+// React-Konva-Editorfläche (M2 #50–#52): rendert ausschließlich aus dem
+// validierten Domänenzustand; es werden keine Konva-Nodes, Auswahlrahmen
+// oder Transformer-Zustände persistiert. Drag-Vorschau läuft nur auf dem
+// Node; die fachliche Position wird erst nach dem Loslassen als
+// Zentimeterwert nach oben gereicht.
+export default function RaumCanvas({
+  breiteCm,
+  laengeCm,
+  rasterCm,
+  objekte = [],
+  ausgewaehltId = null,
+  onAuswaehlen,
+  onBewegt,
+}: RaumCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerBreitePx, setContainerBreitePx] = useState(FALLBACK_BREITE_PX);
 
@@ -88,11 +111,14 @@ export default function RaumCanvas({ breiteCm, laengeCm, rasterCm, objekte = [] 
             />
           ))}
           {/* Persistierte Raumobjekte (M2 #51) — abgeleitet aus RaumObjektV1.
-              Rotation erfolgt um den Objektmittelpunkt (Konva offset). */}
+              Rotation erfolgt um den Objektmittelpunkt (Konva offset).
+              Auswahl und Drag-and-drop (M2 #52): die Auswahlmarkierung ist
+              rein visuell; persistiert wird nur die validierte Endposition. */}
           {objekte.map((o) => {
             const wPx = cmToPx(o.breite_cm, massstab.pxProCm);
             const hPx = cmToPx(o.tiefe_cm, massstab.pxProCm);
             const farben = OBJEKT_FARBEN[o.typ];
+            const ausgewaehlt = o.id === ausgewaehltId;
             return (
               <Rect
                 key={o.id}
@@ -104,8 +130,19 @@ export default function RaumCanvas({ breiteCm, laengeCm, rasterCm, objekte = [] 
                 offsetY={hPx / 2}
                 rotation={o.rotation_deg}
                 fill={farben.fill}
-                stroke={farben.stroke}
-                strokeWidth={1.5}
+                stroke={ausgewaehlt ? AUSWAHL_FARBE : farben.stroke}
+                strokeWidth={ausgewaehlt ? 3 : 1.5}
+                draggable={onBewegt !== undefined}
+                onClick={() => onAuswaehlen?.(o.id)}
+                onTap={() => onAuswaehlen?.(o.id)}
+                onDragEnd={(e: DragEndEvent) => {
+                  if (!onBewegt) return;
+                  // Node-Position ist der Mittelpunkt (offset) — zurück auf
+                  // die linke obere Ecke des unrotierten Rechtecks in cm.
+                  const xCm = (e.target.x() - wPx / 2) / massstab.pxProCm;
+                  const yCm = (e.target.y() - hPx / 2) / massstab.pxProCm;
+                  onBewegt(o.id, xCm, yCm);
+                }}
               />
             );
           })}

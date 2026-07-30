@@ -5,7 +5,19 @@ import { renderToStaticMarkup } from 'react-dom/server';
 // react-konva wird durch aufzeichnende Platzhalter ersetzt — der Test prüft
 // die abgeleitete Konva-Struktur, ohne eine Canvas-API zu benötigen.
 interface LineProps { points: number[] }
-interface RectProps { width: number; height: number; stroke?: string }
+interface RectProps {
+  width: number;
+  height: number;
+  stroke?: string;
+  strokeWidth?: number;
+  rotation?: number;
+  offsetX?: number;
+  offsetY?: number;
+  draggable?: boolean;
+  onClick?: () => void;
+  onTap?: () => void;
+  onDragEnd?: (e: { target: { x(): number; y(): number } }) => void;
+}
 interface StageProps { width: number; height: number; children?: React.ReactNode }
 interface LayerProps { children?: React.ReactNode }
 
@@ -117,5 +129,79 @@ describe('RaumCanvas (M2 #50)', () => {
     expect(objektRect.rotation).toBe(90);
     expect(objektRect.offsetX).toBeCloseTo(objektRect.width / 2, 6);
     expect(objektRect.offsetY).toBeCloseTo(objektRect.height / 2, 6);
+  });
+
+  // --- M2 #52: Auswahl und Drag-and-drop ---
+
+  it('meldet Klicks als Auswahl und markiert das ausgewählte Objekt sichtbar', () => {
+    beforeEachReset();
+    const auswahl: string[] = [];
+    const objekte = [
+      { id: 'o1', typ: 'table_single', x_cm: 100, y_cm: 100, breite_cm: 60, tiefe_cm: 50, rotation_deg: 0 },
+      { id: 'o2', typ: 'table_double', x_cm: 300, y_cm: 100, breite_cm: 120, tiefe_cm: 50, rotation_deg: 0 },
+    ] as const;
+    renderToStaticMarkup(
+      React.createElement(RaumCanvas, {
+        breiteCm: 800,
+        laengeCm: 600,
+        rasterCm: 50,
+        objekte: [...objekte],
+        ausgewaehltId: 'o2',
+        onAuswaehlen: (id: string) => auswahl.push(id),
+      }),
+    );
+    const tisch = gerendert.rects[1];
+    const doppeltisch = gerendert.rects[2];
+
+    // Auswahlmarkierung: nur das ausgewählte Objekt ist hervorgehoben
+    expect(doppeltisch.stroke).toBe('#dc2626');
+    expect(doppeltisch.strokeWidth).toBe(3);
+    expect(tisch.stroke).not.toBe('#dc2626');
+
+    // Klick reicht die Objekt-ID nach oben
+    tisch.onClick?.();
+    expect(auswahl).toEqual(['o1']);
+  });
+
+  it('reicht das Drag-End als Zentimeterposition der linken oberen Ecke nach oben', () => {
+    beforeEachReset();
+    const bewegungen: Array<[string, number, number]> = [];
+    const objekte = [
+      { id: 'o1', typ: 'table_single', x_cm: 100, y_cm: 100, breite_cm: 60, tiefe_cm: 50, rotation_deg: 0 },
+    ] as const;
+    renderToStaticMarkup(
+      React.createElement(RaumCanvas, {
+        breiteCm: 800,
+        laengeCm: 600,
+        rasterCm: 50,
+        objekte: [...objekte],
+        onBewegt: (id: string, x: number, y: number) => bewegungen.push([id, x, y]),
+      }),
+    );
+    const tisch = gerendert.rects[1];
+    expect(tisch.draggable).toBe(true);
+
+    // Fallback-Container 720px → pxProCm = 520/600 (Höhenlimit)
+    const pxProCm = 520 / 600;
+    const nodeXPx = 200;
+    const nodeYPx = 150;
+    tisch.onDragEnd?.({ target: { x: () => nodeXPx, y: () => nodeYPx } });
+
+    expect(bewegungen).toHaveLength(1);
+    const [id, xCm, yCm] = bewegungen[0];
+    expect(id).toBe('o1');
+    expect(xCm).toBeCloseTo((nodeXPx - (60 * pxProCm) / 2) / pxProCm, 6);
+    expect(yCm).toBeCloseTo((nodeYPx - (50 * pxProCm) / 2) / pxProCm, 6);
+  });
+
+  it('bleibt ohne Interaktions-Callbacks statisch (abwärtskompatibel)', () => {
+    beforeEachReset();
+    const objekte = [
+      { id: 'o1', typ: 'board', x_cm: 200, y_cm: 0, breite_cm: 400, tiefe_cm: 15, rotation_deg: 0 },
+    ] as const;
+    renderToStaticMarkup(
+      React.createElement(RaumCanvas, { breiteCm: 800, laengeCm: 600, rasterCm: 50, objekte: [...objekte] }),
+    );
+    expect(gerendert.rects[1].draggable).toBe(false);
   });
 });

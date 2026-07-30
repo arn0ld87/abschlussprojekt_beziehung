@@ -254,4 +254,57 @@ describe('RaumService', () => {
     const renamed = await service.update('u1', r.id, { name: 'Umbenannt' });
     expect(renamed.name).toBe('Umbenannt');
   });
+
+  // --- M2 #52: Objektinteraktion ---
+
+  it('verschiebt ein Objekt mit serverseitigem Rasterfang und persistiert die Endposition', async () => {
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const objektId = mit.canvasDocument.objekte[0].id;
+
+    const bewegt = await service.bewegeObjekt('u1', r.id, objektId, { x_cm: 137, y_cm: 249 });
+    const o = bewegt.canvasDocument.objekte[0];
+    expect(o.x_cm).toBe(150);
+    expect(o.y_cm).toBe(250);
+  });
+
+  it('klemmt Bewegungen über die Raumgrenze hinaus auf eine gültige Position', async () => {
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const objektId = mit.canvasDocument.objekte[0].id;
+
+    const bewegt = await service.bewegeObjekt('u1', r.id, objektId, { x_cm: 99999, y_cm: -500 });
+    const o = bewegt.canvasDocument.objekte[0];
+    expect(o.x_cm + o.breite_cm).toBeLessThanOrEqual(800);
+    expect(o.y_cm).toBeGreaterThanOrEqual(0);
+  });
+
+  it('lehnt Bewegungen mit ungültiger Eingabe ab und behält den bestätigten Stand', async () => {
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const vorher = mit.canvasDocument.objekte[0];
+
+    const err = await service
+      .bewegeObjekt('u1', r.id, vorher.id, { x_cm: Number.NaN, y_cm: 0 })
+      .catch((e) => e);
+    expect(err).toBeInstanceOf(RaumError);
+    expect(err.code).toBe('VALIDATION_ERROR');
+
+    // Fehlerpfad: Repository enthält weiterhin den letzten bestätigten Stand
+    const danach = await service.getById('u1', r.id);
+    expect(danach.canvasDocument.objekte[0].x_cm).toBe(vorher.x_cm);
+    expect(danach.canvasDocument.objekte[0].y_cm).toBe(vorher.y_cm);
+  });
+
+  it('meldet unbekannte Objekte mit NOT_FOUND und fremde Räume mit FORBIDDEN', async () => {
+    const r = await service.create('u1', gueltig);
+    const errMissing = await service.bewegeObjekt('u1', r.id, 'obj_unbekannt', { x_cm: 0, y_cm: 0 }).catch((e) => e);
+    expect(errMissing.code).toBe('NOT_FOUND');
+
+    const mit = await service.addObjekt('u1', r.id, { typ: 'board' });
+    const errForbidden = await service
+      .bewegeObjekt('u2', r.id, mit.canvasDocument.objekte[0].id, { x_cm: 0, y_cm: 0 })
+      .catch((e) => e);
+    expect(errForbidden.code).toBe('FORBIDDEN');
+  });
 });

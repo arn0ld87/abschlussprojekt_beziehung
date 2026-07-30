@@ -16,6 +16,8 @@ export interface ButtonProps {
   className?: string;
   style?: CSSProperties;
   ariaLabel?: string;
+  /** Auswahlzustand für Toggle-Schaltflächen (z. B. Objektliste im Editor) */
+  ariaPressed?: boolean;
 }
 
 /**
@@ -32,6 +34,7 @@ export function Button({
   className,
   style,
   ariaLabel,
+  ariaPressed,
 }: ButtonProps) {
   const padY = size === "sm" ? spacing[1] : spacing[2];
   const padX = size === "sm" ? spacing[3] : spacing[4];
@@ -75,6 +78,7 @@ export function Button({
       disabled={disabled}
       onClick={onClick}
       aria-label={ariaLabel}
+      aria-pressed={ariaPressed}
       style={{ ...base, ...variants[variant], ...style }}
     >
       {children}
