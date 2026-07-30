@@ -50,6 +50,7 @@ export default async function RaumDetailPage({ params }: { params: Promise<{ id:
           laengeCm: raum.laengeCm,
           rasterCm: raum.rasterCm,
           dokumentVersion: raum.dokumentVersion,
+          objekte: raum.canvasDocument.objekte,
         }}
       />
     </Container>

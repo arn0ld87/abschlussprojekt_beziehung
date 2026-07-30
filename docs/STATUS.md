@@ -2,7 +2,7 @@
 
 **Stand:** 29.07.2026<br>
 **Phase:** M0 — Foundation abgeschlossen (29.07.2026, formale Schließung erfolgt); M1 — Klassen inhaltlich gemergt; M2 — Raumeditor ist die aktuelle Frontier<br>
-**Produktcode:** Auth-Grundlage (M1 #42), Klassenverwaltung (M1 #43), Schülerprofile und Sitzregeln (M1 #44), persistenter Foto-Upload (M1 #45), CSV-Import für Klassenlisten (M1 #46) und Raumvorlagen-Grundlage (M2 #49) vorhanden
+**Produktcode:** Auth-Grundlage (M1 #42), Klassenverwaltung (M1 #43), Schülerprofile und Sitzregeln (M1 #44), persistenter Foto-Upload (M1 #45), CSV-Import für Klassenlisten (M1 #46), Raumvorlagen-Grundlage (M2 #49), Raum-Canvas (M2 #50) und Standardobjekte mit Möbelpalette (M2 #51) vorhanden
 
 ## Verifiziert vorhanden
 
@@ -24,6 +24,7 @@
 - CSV-Import für Klassenlisten mit Vorschau, zeilenweisen Fehlern, Bestätigungspflicht und Duplikatstrategie `skip | update | duplicate` (M1 #46, PR [#68](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/68), Merge `1e0a96c`)
 - Raumvorlagen-Grundlage mit CRUD, Ownership, Soft-Delete, realen Maßen, Raster und versioniertem, Konva-freiem `RaumDokumentV1` (JSONB) samt Route Handlern und Editor-Shell (M2 #49, erstes M2-Child)
 - React-Konva-Editorfläche mit framework-freier cm↔px-Koordinatentransformation, exaktem Seitenverhältnis, responsiver Skalierung und sichtbarem, nicht persistiertem Raster (M2 #50)
+- Möbelpalette mit den sechs MVP-Standardobjekten als diskriminierter Zod-Union `RaumObjektV1`, UUID-Objekt-IDs, cm-Maßen, geklemmten Startpositionen und objektrendernder Editorfläche (M2 #51)
 
 ## Noch nicht vorhanden
 
@@ -48,7 +49,7 @@ Der GitHub-Milestone [`M0 — Foundation`](https://github.com/arn0ld87/abschluss
 
 ## Nächster Freigabepunkt
 
-Alle fünf M1-Child-Slices (#42–#46) sind gemergt und die Issues #44 und #46 formal geschlossen; das Parent-Issue [#3](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) bleibt bis zum M1-Abschluss offen. Die aktuelle Frontier ist [M2 — Raumeditor](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4): Der GitHub-Milestone ist angelegt, #49–#55 sind zugeordnet, und [#49](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/49) sowie [#50](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/50) sind umgesetzt. [#51](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/51) wird nach dem Merge von #50 freigegeben; alle weiteren M2-Slices folgen seriell (siehe `docs/superpowers/specs/2026-07-29-m2-m3-ticketing-design.md`).
+Alle fünf M1-Child-Slices (#42–#46) sind gemergt und die Issues #44 und #46 formal geschlossen; das Parent-Issue [#3](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) bleibt bis zum M1-Abschluss offen. Die aktuelle Frontier ist [M2 — Raumeditor](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4): Der GitHub-Milestone ist angelegt, #49–#55 sind zugeordnet, und [#49](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/49), [#50](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/50) und [#51](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/51) sind umgesetzt. [#52](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/52) wird nach dem Merge von #51 freigegeben; alle weiteren M2-Slices folgen seriell (siehe `docs/superpowers/specs/2026-07-29-m2-m3-ticketing-design.md`).
 
 ## Milestone-Frontier
 
@@ -56,7 +57,7 @@ Alle fünf M1-Child-Slices (#42–#46) sind gemergt und die Issues #44 und #46 f
 |---|---|---|
 | M0 | [#2 Foundation: Repository und Agentenworkflow](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/2) | abgeschlossen (29.07.2026, Milestone und Issues formal geschlossen) |
 | M1 | [#3 Klassen: Auth, Klassen und Schülerprofile](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) | alle Child-Slices (#42–#46) gemergt; formale Schließung ausstehend |
-| M2 | [#4 Raumeditor: Maße, Möbel und Sitzplätze](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) | aktuelle Frontier; #49/#50 umgesetzt, #51–#55 folgen seriell |
+| M2 | [#4 Raumeditor: Maße, Möbel und Sitzplätze](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) | aktuelle Frontier; #49–#51 umgesetzt, #52–#55 folgen seriell |
 | M3 | [#5 Persistente Pläne: Autosave, Versionen und Restore](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) | blockiert durch M1 und M2 |
 | M4 | [#6 Optimierer: Regeln, Konflikte und reproduzierbare Vorschläge](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/6) | blockiert durch M3 |
 | M5 | [#7 KI-Assistent: BYOK, Chat und validierte Commands](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/7) | blockiert durch M4 |

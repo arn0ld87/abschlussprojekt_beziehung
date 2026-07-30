@@ -87,4 +87,35 @@ describe('RaumCanvas (M2 #50)', () => {
     // Raumgrenze bleibt die einzige Rect
     expect(gerendert.rects).toHaveLength(1);
   });
+
+  it('rendert alle sechs Objektarten als eigene Rects aus dem Domänenzustand (M2 #51)', () => {
+    beforeEachReset();
+    const objekte = [
+      { id: 'o1', typ: 'table_single', x_cm: 100, y_cm: 200, breite_cm: 60, tiefe_cm: 50, rotation_deg: 0 },
+      { id: 'o2', typ: 'table_double', x_cm: 200, y_cm: 200, breite_cm: 120, tiefe_cm: 50, rotation_deg: 0 },
+      { id: 'o3', typ: 'teacher_desk', x_cm: 320, y_cm: 55, breite_cm: 160, tiefe_cm: 80, rotation_deg: 0 },
+      { id: 'o4', typ: 'board', x_cm: 200, y_cm: 0, breite_cm: 400, tiefe_cm: 15, rotation_deg: 0 },
+      { id: 'o5', typ: 'door', x_cm: 0, y_cm: 580, breite_cm: 90, tiefe_cm: 20, rotation_deg: 0 },
+      { id: 'o6', typ: 'window', x_cm: 0, y_cm: 300, breite_cm: 180, tiefe_cm: 15, rotation_deg: 0 },
+    ] as const;
+    renderToStaticMarkup(
+      React.createElement(RaumCanvas, { breiteCm: 800, laengeCm: 600, rasterCm: 50, objekte: [...objekte] }),
+    );
+    // Raumgrenze + sechs Objekt-Rects — rein abgeleitet, nichts persistiert
+    expect(gerendert.rects).toHaveLength(7);
+  });
+
+  it('rotiert Objekte um ihren Mittelpunkt (Konva offset)', () => {
+    beforeEachReset();
+    const objekte = [
+      { id: 'o1', typ: 'teacher_desk', x_cm: 100, y_cm: 100, breite_cm: 160, tiefe_cm: 80, rotation_deg: 90 },
+    ] as const;
+    renderToStaticMarkup(
+      React.createElement(RaumCanvas, { breiteCm: 800, laengeCm: 600, rasterCm: 50, objekte: [...objekte] }),
+    );
+    const objektRect = gerendert.rects[1] as { rotation?: number; offsetX?: number; offsetY?: number; width: number; height: number };
+    expect(objektRect.rotation).toBe(90);
+    expect(objektRect.offsetX).toBeCloseTo(objektRect.width / 2, 6);
+    expect(objektRect.offsetY).toBeCloseTo(objektRect.height / 2, 6);
+  });
 });

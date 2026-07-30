@@ -1,5 +1,5 @@
 import { doublePrecision, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
-import type { RaumDokumentV1 } from "../../domain/raum";
+import type { RaumDokument } from "../../domain/raum";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -142,7 +142,7 @@ export const raeume = pgTable("raeume", {
   laengeCm: doublePrecision("laenge_cm").notNull(),
   rasterCm: doublePrecision("raster_cm").notNull(),
   dokumentVersion: integer("dokument_version").notNull().default(1),
-  canvasDocument: jsonb("canvas_document").$type<RaumDokumentV1>().notNull(),
+  canvasDocument: jsonb("canvas_document").$type<RaumDokument>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),

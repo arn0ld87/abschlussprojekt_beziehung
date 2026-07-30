@@ -3,21 +3,33 @@
 import { useEffect, useRef, useState } from 'react';
 import { Stage, Layer, Rect, Line } from 'react-konva';
 import { berechneMassstab, rasterLinien, cmToPx } from '../../../../../src/domain/raum/koordinaten';
+import type { RaumObjektV1, RaumObjektTyp } from '../../../../../src/domain/raum/objekte';
 
 export interface RaumCanvasProps {
   breiteCm: number;
   laengeCm: number;
   rasterCm: number;
+  objekte?: RaumObjektV1[];
 }
 
 const MAX_HOEHE_PX = 520;
 const FALLBACK_BREITE_PX = 720;
 const RAND_PX = 1;
 
-// React-Konva-Editorfläche (M2 #50): rendert ausschließlich aus dem
+// Rein darstellerische Farben pro Objektart — keine Fachlogik.
+const OBJEKT_FARBEN: Record<RaumObjektTyp, { fill: string; stroke: string }> = {
+  table_single: { fill: '#dbeafe', stroke: '#1d4ed8' },
+  table_double: { fill: '#bfdbfe', stroke: '#1d4ed8' },
+  teacher_desk: { fill: '#fef3c7', stroke: '#b45309' },
+  board: { fill: '#065f46', stroke: '#064e3b' },
+  door: { fill: '#e5e7eb', stroke: '#4b5563' },
+  window: { fill: '#e0f2fe', stroke: '#0369a1' },
+};
+
+// React-Konva-Editorfläche (M2 #50/#51): rendert ausschließlich aus dem
 // validierten Domänenzustand; es werden keine Konva-Nodes persistiert.
-// Möbel (#51) und Interaktion (#52) folgen in eigenen Layern.
-export default function RaumCanvas({ breiteCm, laengeCm, rasterCm }: RaumCanvasProps) {
+// Der Renderer enthält keine Persistenzlogik — Objekte kommen als Props.
+export default function RaumCanvas({ breiteCm, laengeCm, rasterCm, objekte = [] }: RaumCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerBreitePx, setContainerBreitePx] = useState(FALLBACK_BREITE_PX);
 
@@ -75,6 +87,28 @@ export default function RaumCanvas({ breiteCm, laengeCm, rasterCm }: RaumCanvasP
               strokeWidth={1}
             />
           ))}
+          {/* Persistierte Raumobjekte (M2 #51) — abgeleitet aus RaumObjektV1.
+              Rotation erfolgt um den Objektmittelpunkt (Konva offset). */}
+          {objekte.map((o) => {
+            const wPx = cmToPx(o.breite_cm, massstab.pxProCm);
+            const hPx = cmToPx(o.tiefe_cm, massstab.pxProCm);
+            const farben = OBJEKT_FARBEN[o.typ];
+            return (
+              <Rect
+                key={o.id}
+                x={cmToPx(o.x_cm, massstab.pxProCm) + wPx / 2}
+                y={cmToPx(o.y_cm, massstab.pxProCm) + hPx / 2}
+                width={wPx}
+                height={hPx}
+                offsetX={wPx / 2}
+                offsetY={hPx / 2}
+                rotation={o.rotation_deg}
+                fill={farben.fill}
+                stroke={farben.stroke}
+                strokeWidth={1.5}
+              />
+            );
+          })}
         </Layer>
       </Stage>
     </div>

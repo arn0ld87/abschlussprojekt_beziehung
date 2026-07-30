@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Button from '../../../../../src/ui/Button';
 import { MIN_RASTER_CM } from '../../../../../src/domain/raum/koordinaten';
+import { RAUM_OBJEKT_TYPEN, STANDARD_OBJEKTE } from '../../../../../src/domain/raum/objekte';
+import type { RaumObjektTyp, RaumObjektV1 } from '../../../../../src/domain/raum/objekte';
 
 // react-konva braucht den Browser — bewusst ohne SSR geladen (Ladezustand sichtbar).
 const RaumCanvas = dynamic(() => import('./RaumCanvas'), {
@@ -35,11 +37,13 @@ export interface RaumEditorProps {
     laengeCm: number;
     rasterCm: number;
     dokumentVersion: number;
+    objekte: RaumObjektV1[];
   };
 }
 
-// Editor-Shell für M2 #49: Raumdaten anzeigen und Maße/Raster pflegen.
-// Die Konva-Editorfläche folgt mit #50, Möbel mit #51.
+// Editor-Shell für M2 #49–#51: Raumdaten anzeigen, Maße/Raster pflegen und
+// Standardobjekte aus der Möbelpalette einfügen. Objektinteraktion (#52)
+// und Objektaktionen (#53) folgen in eigenen Slices.
 export default function RaumEditor({ raum }: RaumEditorProps) {
   const router = useRouter();
   const [name, setName] = useState(raum.name);
@@ -104,6 +108,32 @@ export default function RaumEditor({ raum }: RaumEditorProps) {
     }
   };
 
+  const handleAddObjekt = async (typ: RaumObjektTyp) => {
+    if (isSubmitting) return;
+
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch(`/api/raeume/${raum.id}/objekte`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ typ }),
+      });
+
+      if (res.ok) {
+        router.refresh();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error?.message || 'Ein Fehler ist aufgetreten.');
+      }
+    } catch {
+      setError('Ein Fehler ist aufgetreten.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const fieldStyle = { width: '100%', padding: '0.5rem' } as const;
   const labelStyle = { display: 'block', marginBottom: '0.25rem' } as const;
 
@@ -124,7 +154,27 @@ export default function RaumEditor({ raum }: RaumEditorProps) {
         breiteCm={vorschau.breiteCm}
         laengeCm={vorschau.laengeCm}
         rasterCm={vorschau.rasterCm}
+        objekte={raum.objekte}
       />
+
+      <h3>Möbelpalette</h3>
+      <div
+        role="group"
+        aria-label="Standardobjekte hinzufügen"
+        style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '2rem' }}
+      >
+        {RAUM_OBJEKT_TYPEN.map((typ) => (
+          <Button
+            key={typ}
+            type="button"
+            variant="ghost"
+            disabled={isSubmitting}
+            onClick={() => handleAddObjekt(typ)}
+          >
+            + {STANDARD_OBJEKTE[typ].label}
+          </Button>
+        ))}
+      </div>
 
       <h3>Raumdaten bearbeiten</h3>
       {error && <p style={{ color: 'red' }}>{error}</p>}

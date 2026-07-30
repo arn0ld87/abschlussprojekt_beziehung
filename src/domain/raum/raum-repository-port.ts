@@ -1,4 +1,4 @@
-import { Raum, RaumDokumentV1 } from './raum';
+import { Raum, RaumDokument } from './raum';
 
 export interface RaumRepository {
   findAllByUserId(userId: string): Promise<Raum[]>;
@@ -11,14 +11,15 @@ export interface RaumRepository {
     laengeCm: number;
     rasterCm: number;
     dokumentVersion: number;
-    canvasDocument: RaumDokumentV1;
+    canvasDocument: RaumDokument;
   }): Promise<Raum>;
   update(id: string, data: {
     name?: string;
     breiteCm?: number;
     laengeCm?: number;
     rasterCm?: number;
-    canvasDocument?: RaumDokumentV1;
+    dokumentVersion?: number;
+    canvasDocument?: RaumDokument;
     updatedAt: Date;
   }): Promise<Raum>;
   softDelete(id: string): Promise<void>;
