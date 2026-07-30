@@ -1,8 +1,8 @@
 # Projektstatus
 
-**Stand:** 29.07.2026<br>
-**Phase:** M0 — Foundation abgeschlossen (29.07.2026, formale Schließung erfolgt); M1 — Klassen inhaltlich gemergt; M2 — Raumeditor ist die aktuelle Frontier<br>
-**Produktcode:** Auth-Grundlage (M1 #42), Klassenverwaltung (M1 #43), Schülerprofile und Sitzregeln (M1 #44), persistenter Foto-Upload (M1 #45), CSV-Import für Klassenlisten (M1 #46), Raumvorlagen-Grundlage (M2 #49), Raum-Canvas (M2 #50), Standardobjekte mit Möbelpalette (M2 #51), Objektinteraktion mit Rasterfang (M2 #52), Objektaktionen (M2 #53) und adressierbare Sitzplätze (M2 #54) vorhanden
+**Stand:** 30.07.2026<br>
+**Phase:** M0 — Foundation abgeschlossen (29.07.2026, formale Schließung erfolgt); M1 — Klassen inhaltlich gemergt; M2 — Raumeditor inhaltlich abgeschlossen; M3 — Persistente Pläne ist die aktuelle Frontier<br>
+**Produktcode:** Auth-Grundlage (M1 #42), Klassenverwaltung (M1 #43), Schülerprofile und Sitzregeln (M1 #44), persistenter Foto-Upload (M1 #45), CSV-Import für Klassenlisten (M1 #46), Raumvorlagen-Grundlage (M2 #49), Raum-Canvas (M2 #50), Standardobjekte mit Möbelpalette (M2 #51), Objektinteraktion mit Rasterfang (M2 #52), Objektaktionen (M2 #53), adressierbare Sitzplätze (M2 #54) und die M2-Akzeptanz (M2 #55) vorhanden
 
 ## Verifiziert vorhanden
 
@@ -28,10 +28,11 @@
 - Objektinteraktion mit Einzelauswahl (Maus/Tastatur), sichtbarer Auswahlmarkierung, Drag-and-drop mit serverseitigem Rasterfang, rotationsbereinigter Raumgrenzen-Begrenzung und Rollback bei Speicherfehlern (M2 #52)
 - Objektaktionen: Rotation in 90-Grad-Schritten, Duplizieren mit neuer UUID und rasterversetzter Position, Löschen mit Bestätigung — per Toolbar und Tastaturkürzeln (R/D/Entf), mit Reload-beweisender Aktionsfolge (M2 #53)
 - Adressierbare Sitzplätze an Einzel- und Doppeltischen mit stabilen IDs, lokalem Anker, `RaumDokumentV3` samt validierter Migration, sichtbaren Markern und zugänglicher Liste; Verschieben/Drehen bewahrt IDs, Duplizieren erzeugt disjunkte IDs, Löschen entfernt Sitzplätze atomar (M2 #54)
+- M2-Akzeptanz-Evidenz: PostgreSQL-Integrationstest über den vollständigen Akzeptanzpfad (Anlegen → Maße/Raster → alle sechs Objekte → Verschieben/Drehen/Duplizieren/Löschen → Sitzplätze → Reload identisch), JSONB-Konva-Freiheits- und Versionsvertrag, Ownership-Nachweis, Accessibility-Vertragstest (statisches Markup + Quell-Vertrag) und visueller Referenzzustand (M2 #55)
 
 ## Noch nicht vorhanden
 
-- Raumvorlagen und Sitzplan-Editor
+- Sitzplan-Editor
 - Release-Artefakt
 
 ## M0-Abschluss
@@ -50,9 +51,25 @@ M0 — Foundation ist am 29.07.2026 inhaltlich abgeschlossen. Jeder M0-Slice ist
 
 Der GitHub-Milestone [`M0 — Foundation`](https://github.com/arn0ld87/abschlussprojekt_beziehung/milestone/1) wurde am 29.07.2026 geschlossen (`closed_at=2026-07-29T00:02:34Z`, `open_issues=0`, `closed_issues=9`). Er enthält das Parent-Issue [#2](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/2) und alle sieben M0-Child-Issues (#17, #18, #19, #20, #21, #27, #31); die zugehörige M0-Akzeptanz [#22](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/22) ist gemergt. Das Parent-Issue und alle sieben Child-Issues sind `CLOSED`.
 
+## M2-Abschluss
+
+M2 — Raumeditor ist am 30.07.2026 inhaltlich abgeschlossen. Jeder M2-Slice ist mit seinem Merge-Commit auf `main` nachgewiesen; die Pflicht-Checks (Dokumentationsgate, Lint, Typecheck, Vitest, Build) waren auf allen M2-Pull-Requests grün. Die Akzeptanz [#55](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/55) weist den vollständigen Akzeptanzpfad gegen Test-PostgreSQL nach (Anlegen → Maße/Raster → alle sechs Objekte → Verschieben/Drehen/Duplizieren/Löschen → Sitzplätze → Reload identisch), dazu JSONB-Konva-Freiheit, V1-Bestandsmigration auf `RaumDokumentV3`, Ownership, einen Accessibility-Vertragstest und den visuellen Referenzzustand.
+
+| Slice | Issue | Pull Request | Merge-Commit |
+|---|---|---|---|
+| Raumvorlagen-Grundlage | [#49](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/49) | [#76](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/76) | `10077cd` |
+| Raum-Canvas | [#50](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/50) | [#77](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/77) | `c42d6f6` |
+| Standardobjekte und Möbelpalette | [#51](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/51) | [#78](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/78) | `19e86a9` |
+| Objektinteraktion mit Rasterfang | [#52](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/52) | [#79](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/79) | `808506b` |
+| Objektaktionen (Drehen, Duplizieren, Löschen) | [#53](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/53) | [#80](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/80) | `7ff21f9` |
+| Adressierbare Sitzplätze | [#54](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/54) | [#81](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/81) | `9443ed4` |
+| M2-Akzeptanz | [#55](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/55) | [#82](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/82) | siehe Merge-Verlauf |
+
+Folgeschritt (Lead): formale Schließung des Parent-Issues [#4](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) und des GitHub-Milestones M2 analog zu M0.
+
 ## Nächster Freigabepunkt
 
-Alle fünf M1-Child-Slices (#42–#46) sind gemergt und die Issues #44 und #46 formal geschlossen; das Parent-Issue [#3](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) bleibt bis zum M1-Abschluss offen. Die aktuelle Frontier ist [M2 — Raumeditor](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4): Der GitHub-Milestone ist angelegt, #49–#55 sind zugeordnet, und [#49](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/49), [#50](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/50), [#51](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/51), [#52](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/52), [#53](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/53) und [#54](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/54) sind umgesetzt. [#55](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/55) wird nach dem Merge von #54 freigegeben und schließt M2 ab (siehe `docs/superpowers/specs/2026-07-29-m2-m3-ticketing-design.md`).
+Alle sechs M2-Child-Slices (#49–#54) und die M2-Akzeptanz [#55](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/55) sind gemergt; das Parent-Issue [#4](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) bleibt bis zur formalen M2-Schließung durch den Lead offen. Die aktuelle Frontier ist [M3 — Persistente Pläne](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5): Autosave, Versionen und Restore mit neuer Revision je Restore (siehe `docs/superpowers/specs/2026-07-29-m2-m3-ticketing-design.md`).
 
 ## Milestone-Frontier
 
@@ -60,8 +77,8 @@ Alle fünf M1-Child-Slices (#42–#46) sind gemergt und die Issues #44 und #46 f
 |---|---|---|
 | M0 | [#2 Foundation: Repository und Agentenworkflow](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/2) | abgeschlossen (29.07.2026, Milestone und Issues formal geschlossen) |
 | M1 | [#3 Klassen: Auth, Klassen und Schülerprofile](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) | alle Child-Slices (#42–#46) gemergt; formale Schließung ausstehend |
-| M2 | [#4 Raumeditor: Maße, Möbel und Sitzplätze](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) | aktuelle Frontier; #49–#54 umgesetzt, #55 folgt seriell |
-| M3 | [#5 Persistente Pläne: Autosave, Versionen und Restore](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) | blockiert durch M1 und M2 |
+| M2 | [#4 Raumeditor: Maße, Möbel und Sitzplätze](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) | inhaltlich abgeschlossen (30.07.2026); formale Schließung von Parent-Issue und Milestone ausstehend |
+| M3 | [#5 Persistente Pläne: Autosave, Versionen und Restore](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) | aktuelle Frontier |
 | M4 | [#6 Optimierer: Regeln, Konflikte und reproduzierbare Vorschläge](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/6) | blockiert durch M3 |
 | M5 | [#7 KI-Assistent: BYOK, Chat und validierte Commands](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/7) | blockiert durch M4 |
 | M6 | [#8 Ausgabe und PWA: Entwürfe, PDF, PNG und Import/Export](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/8) | blockiert durch M3 |

@@ -8,6 +8,7 @@ interface LineProps { points: number[] }
 interface RectProps {
   width: number;
   height: number;
+  fill?: string;
   stroke?: string;
   strokeWidth?: number;
   rotation?: number;
@@ -293,5 +294,65 @@ describe('RaumCanvas (M2 #50)', () => {
       React.createElement(RaumCanvas, { breiteCm: 800, laengeCm: 600, rasterCm: 50, objekte: [...objekte] }),
     );
     expect(gerendert.circles).toHaveLength(0);
+  });
+
+  // --- M2 #55: Visueller Referenzzustand ---
+
+  it('hält den vollständigen Referenzzustand fest: alle Objektarten, Farben und kanonische Sitzplatzmarker', () => {
+    beforeEachReset();
+    // Referenzszene: alle sechs Objektarten, beide Tischarten mit ihren
+    // kanonischen Sitzplätzen (Einzeltisch 1, Doppeltisch 2) — entspricht
+    // dem Stand, den der PostgreSQL-Akzeptanzpfad persistiert.
+    const objekte = [
+      { id: 'o_tafel', typ: 'board', x_cm: 200, y_cm: 0, breite_cm: 400, tiefe_cm: 15, rotation_deg: 0 },
+      { id: 'o_pult', typ: 'teacher_desk', x_cm: 320, y_cm: 55, breite_cm: 160, tiefe_cm: 80, rotation_deg: 0 },
+      { id: 'o_einzel', typ: 'table_single', x_cm: 100, y_cm: 200, breite_cm: 60, tiefe_cm: 50, rotation_deg: 0 },
+      { id: 'o_doppel', typ: 'table_double', x_cm: 200, y_cm: 200, breite_cm: 120, tiefe_cm: 50, rotation_deg: 0 },
+      { id: 'o_tuer', typ: 'door', x_cm: 0, y_cm: 580, breite_cm: 90, tiefe_cm: 20, rotation_deg: 0 },
+      { id: 'o_fenster', typ: 'window', x_cm: 0, y_cm: 300, breite_cm: 180, tiefe_cm: 15, rotation_deg: 0 },
+    ] as const;
+    const sitzplaetze = [
+      { id: 'o_einzel__sitz_1', objektId: 'o_einzel', lokalX_cm: 30, lokalY_cm: 50, bezeichnung: 'Sitz 1' },
+      { id: 'o_doppel__sitz_1', objektId: 'o_doppel', lokalX_cm: 30, lokalY_cm: 50, bezeichnung: 'Sitz 1' },
+      { id: 'o_doppel__sitz_2', objektId: 'o_doppel', lokalX_cm: 90, lokalY_cm: 50, bezeichnung: 'Sitz 2' },
+    ] as const;
+    renderToStaticMarkup(
+      React.createElement(RaumCanvas, {
+        breiteCm: 800,
+        laengeCm: 600,
+        rasterCm: 50,
+        objekte: [...objekte],
+        sitzplaetze: [...sitzplaetze],
+      }),
+    );
+
+    // Seitenverhältnis der Stage bleibt exakt 800:600
+    const stage = gerendert.stage!;
+    expect((stage.width - 2) / (stage.height - 2)).toBeCloseTo(800 / 600, 6);
+
+    // Gruppenstruktur: eine draggable-fähige Gruppe pro Objekt
+    expect(gerendert.groups).toHaveLength(6);
+
+    // Raumgrenze + sechs Objektflächen — jede Objektart in ihrer
+    // vereinbarten Darstellungsfarbe (visueller Vertrag, keine Fachlogik)
+    expect(gerendert.rects).toHaveLength(7);
+    const objektFills = gerendert.rects.slice(1).map((r) => r.fill);
+    expect(objektFills).toEqual(['#065f46', '#fef3c7', '#dbeafe', '#bfdbfe', '#e5e7eb', '#e0f2fe']);
+
+    // Drei kanonische Sitzplatzmarker — alle in der Markerfarbe, niemals
+    // interaktiv, in lokalen Gruppenkoordinaten verankert
+    expect(gerendert.circles).toHaveLength(3);
+    const pxProCm = 520 / 600;
+    for (const marker of gerendert.circles) {
+      expect(marker.fill).toBe('#f97316');
+      expect(marker.stroke).toBe('#7c2d12');
+      expect(marker.listening).toBe(false);
+      expect(marker.radius).toBeCloseTo(10 * pxProCm, 6);
+    }
+    expect(gerendert.circles.map((c) => [c.x, c.y])).toEqual([
+      [30 * pxProCm, 50 * pxProCm],
+      [30 * pxProCm, 50 * pxProCm],
+      [90 * pxProCm, 50 * pxProCm],
+    ]);
   });
 });

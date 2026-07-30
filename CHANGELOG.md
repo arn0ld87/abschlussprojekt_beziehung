@@ -4,6 +4,12 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 
 ## Unreleased
 
+## M2 — Raumeditor — 30.07.2026
+
+**Betroffene Bereiche:** Raumvorlagen mit versioniertem JSONB-Dokument, Konva-Editorfläche, Standardobjekte und Möbelpalette, Objektinteraktion mit Rasterfang, Objektaktionen, adressierbare Sitzplätze, M2-Akzeptanz.
+
+**Child-Issues:** #49 (PR [#76](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/76), Merge `10077cd`), #50 (PR [#77](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/77), Merge `c42d6f6`), #51 (PR [#78](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/78), Merge `19e86a9`), #52 (PR [#79](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/79), Merge `808506b`), #53 (PR [#80](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/80), Merge `7ff21f9`), #54 (PR [#81](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/81), Merge `9443ed4`), #55 (PR [#82](https://github.com/arn0ld87/abschlussprojekt_beziehung/pull/82)). Das Parent-Issue #4 bleibt bis zur formalen M2-Schließung offen.
+
 ### Added
 
 - Raumvorlagen-Grundlage (M2 #49): Drizzle-Tabelle `raeume` mit Migration `0005_raeume.sql`, versionierter und Konva-freier Zod-Vertrag `RaumDokumentV1` (JSONB, `version: 1`, Maße, Raster, leere Objektliste), framework-freier `RaumService` mit Ownership- und Raster-Validierung, Route Handler unter `/api/raeume` sowie UI `/raeume`, `/raeume/neu` und Editor-Shell `/raeume/[id]` (Editorfläche folgt mit M2 #50)
@@ -12,6 +18,11 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 - Objektinteraktion (M2 #52): Auswahl genau eines Raumobjekts per Maus/Tap/Tastatur (Objektliste mit `aria-pressed`), sichtbare Auswahlmarkierung ohne Persistenz, Drag-and-drop mit flüssiger Vorschau und serverseitigem Rasterfang, framework-freie Domänenfunktionen `rundeAufRaster`/`bewegeObjektAufRaster` (idempotent, rotationsbereinigt an den Raumgrenzen), Serviceaktion `bewegeObjekt`, Route Handler `PATCH /api/raeume/[id]/objekte/[objektId]` und Rollback auf den letzten bestätigten Dokumentstand bei Speicherfehlern
 - Objektaktionen (M2 #53): Rotation in normalisierten 90-Grad-Schritten (Bounds rotationsbereinigt), Duplizieren mit neuer UUID und rasterversetzter Position inklusive verständlicher Ablehnung ohne freien Platz, Löschen mit Bestätigung und exaktem Delete-Scope, framework-freie Commands (`rotiereObjekt`, `berechneDuplikatPosition`, `entferneObjekt`), Toolbar mit `role="toolbar"` und dokumentierte Tastaturkürzel (R/D/Entf), Route Handler `POST /api/raeume/[id]/objekte/[objektId]/aktionen` und `DELETE /api/raeume/[id]/objekte/[objektId]`
 - Adressierbare Sitzplätze (M2 #54): Zod-Vertrag `SitzplatzV1` mit stabiler, aus der Objekt-ID abgeleiteter ID, Parent-Objekt-ID, lokalem Anker und Bezeichnung, deterministische Sitzplatzgeometrie (Einzeltisch 1 Platz, Doppeltisch 2 Plätze auf der Stirnseite), neue Dokumentversion `RaumDokumentV3` mit validierter V2→V3-Migration samt Parent-Integritäts- und Geometrie-Validierung (ADR-0003), framework-freie Funktionen (`erzeugeSitzplaetze`, `sitzplatzWeltPosition`, `dupliziereSitzplaetze`, `entferneSitzplaetzeVon`), atomare Mitführung in den Objektaktionen (Erzeugen mit dem Tisch, ID-Stabilität bei Bewegen/Drehen, disjunkte IDs beim Duplizieren, Löschen im selben Command), sichtbare Sitzplatzmarker im Konva-Canvas und zugängliche Sitzplatzliste im Editor
+- M2-Akzeptanz (M2 #55): PostgreSQL-Integrationstest (`tests/raum/raum-postgres.integration.test.ts`, opt-in via `TEST_DATABASE_URL`) über den vollständigen Akzeptanzpfad inklusive Reload-Identität, JSONB-Konva-Freiheits- und Versionsvertrag, V1-Bestandsmigration auf `RaumDokumentV3` und Ownership-Nachweis; Accessibility-Vertragstest (`tests/raum/raum-a11y.test.tsx`) aus statischem Markup und Quell-Vertrag; visueller Referenzzustand in `tests/raum/raum-canvas.test.tsx`
+
+### Fixed
+
+- Objektliste im Editor übergibt den Auswahlzustand jetzt über die `ariaPressed`-Prop der Button-Komponente statt eines verworfenen `aria-pressed`-Attributs — die Auswahl ist damit tatsächlich für Assistenztechnologie sichtbar (M2 #55)
 
 ## M1 — Klassen — 29.07.2026
 
