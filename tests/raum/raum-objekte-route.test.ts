@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST as addObjekt } from '../../app/api/raeume/[id]/objekte/route';
+import { PATCH as bewegeObjekt } from '../../app/api/raeume/[id]/objekte/[objektId]/route';
 import { setGlobalRaumService, getDefaultRaumService } from '../../src/services/raum';
 import { setGlobalAuthService } from '../../src/services/auth';
 import { AuthService } from '../../src/services/auth/auth-service';
@@ -86,6 +87,84 @@ describe('POST /api/raeume/[id]/objekte (M2 #51)', () => {
     await setSession(mockUser);
     const r = await getDefaultRaumService().create('u1', gueltig);
     const res = await addObjekt(req({ typ: 'spaceship' }), { params: Promise.resolve({ id: r.id }) });
+    expect(res.status).toBe(422);
+    const data = await res.json();
+    expect(data.code).toBe('VALIDATION_ERROR');
+  });
+
+  // --- M2 #52: PATCH /api/raeume/[id]/objekte/[objektId] ---
+
+  function patchReq(body?: unknown) {
+    const headers = new Headers();
+    if (currentSessionToken) {
+      headers.set('Cookie', `sitzplan_session=${currentSessionToken}`);
+    }
+    return new NextRequest('http://localhost/api/raeume/x/objekte/y', {
+      method: 'PATCH',
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  it('PATCH 200 speichert die gerundete Endposition', async () => {
+    await setSession(mockUser);
+    const service = getDefaultRaumService();
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const objektId = mit.canvasDocument.objekte[0].id;
+
+    const res = await bewegeObjekt(patchReq({ x_cm: 137, y_cm: 249 }), {
+      params: Promise.resolve({ id: r.id, objektId }),
+    });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.canvasDocument.objekte[0].x_cm).toBe(150);
+    expect(data.canvasDocument.objekte[0].y_cm).toBe(250);
+  });
+
+  it('PATCH 401 unauth', async () => {
+    await setSession(null);
+    const res = await bewegeObjekt(patchReq({ x_cm: 0, y_cm: 0 }), {
+      params: Promise.resolve({ id: 'any', objektId: 'obj_x' }),
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it('PATCH 403 other user', async () => {
+    await setSession(mockUser);
+    const service = getDefaultRaumService();
+    const r = await service.create('other', gueltig);
+    const mit = await service.addObjekt('other', r.id, { typ: 'board' });
+    const res = await bewegeObjekt(patchReq({ x_cm: 0, y_cm: 0 }), {
+      params: Promise.resolve({ id: r.id, objektId: mit.canvasDocument.objekte[0].id }),
+    });
+    expect(res.status).toBe(403);
+  });
+
+  it('PATCH 404 unbekannter Raum oder unbekanntes Objekt', async () => {
+    await setSession(mockUser);
+    const service = getDefaultRaumService();
+    const r = await service.create('u1', gueltig);
+
+    const raumFehlt = await bewegeObjekt(patchReq({ x_cm: 0, y_cm: 0 }), {
+      params: Promise.resolve({ id: 'missing', objektId: 'obj_x' }),
+    });
+    expect(raumFehlt.status).toBe(404);
+
+    const objektFehlt = await bewegeObjekt(patchReq({ x_cm: 0, y_cm: 0 }), {
+      params: Promise.resolve({ id: r.id, objektId: 'obj_unbekannt' }),
+    });
+    expect(objektFehlt.status).toBe(404);
+  });
+
+  it('PATCH 422 ungültige Position', async () => {
+    await setSession(mockUser);
+    const service = getDefaultRaumService();
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'board' });
+    const res = await bewegeObjekt(patchReq({ x_cm: 'links', y_cm: 0 }), {
+      params: Promise.resolve({ id: r.id, objektId: mit.canvasDocument.objekte[0].id }),
+    });
     expect(res.status).toBe(422);
     const data = await res.json();
     expect(data.code).toBe('VALIDATION_ERROR');

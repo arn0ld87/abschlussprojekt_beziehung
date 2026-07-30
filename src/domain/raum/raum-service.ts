@@ -17,6 +17,7 @@ import {
   istObjektImRaum,
   startPosition,
 } from './objekte';
+import { BewegeObjektInputSchema, bewegeObjektAufRaster } from './interaktion';
 
 export class RaumError extends Error {
   constructor(public code: 'NOT_FOUND' | 'FORBIDDEN' | 'VALIDATION_ERROR', message: string) {
@@ -163,6 +164,50 @@ export class RaumService {
       ...dokument,
       objekte: [...dokument.objekte, objekt],
     });
+    if (!validiert.success) {
+      throw new RaumError('VALIDATION_ERROR', validiert.error.errors[0].message);
+    }
+
+    return this.repository.update(raumId, {
+      dokumentVersion: AKTUELLE_DOKUMENT_VERSION,
+      canvasDocument: validiert.data,
+      updatedAt: new Date(),
+    });
+  }
+
+  /**
+   * Verschiebt ein Objekt nach abgeschlossener Drag-Interaktion (M2 #52):
+   * Die Zielposition wird serverseitig auf das Dokumentraster gerundet und
+   * auf die Raumgrenzen begrenzt (rotationsbereinigt). Persistiert wird erst,
+   * nachdem das komplette Dokument erneut validiert wurde — schlägt die
+   * Validierung fehl, bleibt der bisherige bestätigte Stand unverändert.
+   */
+  async bewegeObjekt(userId: string, raumId: string, objektId: string, input: unknown): Promise<Raum> {
+    const parsed = BewegeObjektInputSchema.safeParse(input);
+    if (!parsed.success) {
+      throw new RaumError('VALIDATION_ERROR', parsed.error.errors[0].message);
+    }
+
+    const existing = await this.getById(userId, raumId); // Checks existence & ownership
+    const dokument = this.lesenUndMigrieren(existing.canvasDocument);
+
+    const index = dokument.objekte.findIndex((o) => o.id === objektId);
+    if (index === -1) {
+      throw new RaumError('NOT_FOUND', 'Objekt nicht gefunden.');
+    }
+
+    const ziel = bewegeObjektAufRaster(
+      dokument.objekte[index],
+      parsed.data.x_cm,
+      parsed.data.y_cm,
+      dokument.rasterCm,
+      dokument.breiteCm,
+      dokument.laengeCm,
+    );
+
+    const objekte = dokument.objekte.map((o, i) => (i === index ? { ...o, x_cm: ziel.x_cm, y_cm: ziel.y_cm } : o));
+
+    const validiert = RaumDokumentV2Schema.safeParse({ ...dokument, objekte });
     if (!validiert.success) {
       throw new RaumError('VALIDATION_ERROR', validiert.error.errors[0].message);
     }
