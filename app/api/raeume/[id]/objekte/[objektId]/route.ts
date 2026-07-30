@@ -24,3 +24,23 @@ export async function PATCH(
     return handleRaumError(err);
   }
 }
+
+// DELETE /api/raeume/[id]/objekte/[objektId] — entfernt genau das
+// ausgewählte Objekt aus dem Raumdokument (M2 #53).
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string; objektId: string }> },
+) {
+  const { user, response } = await requireUser(req);
+  if (response) return response;
+
+  const service = getService();
+  const { id, objektId } = await params;
+
+  try {
+    await service.entferneObjekt(user.id, id, objektId);
+    return new NextResponse(null, { status: 204 });
+  } catch (err) {
+    return handleRaumError(err);
+  }
+}

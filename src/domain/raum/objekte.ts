@@ -126,6 +126,17 @@ export function istObjektImRaum(objekt: RaumObjektV1, raumBreiteCm: number, raum
 }
 
 /**
+ * Prüft, ob sich die gerenderten Bounding-Boxen zweier Objekte überlappen.
+ * Kantenberührung gilt nicht als Überlappung (Gleitkomma-Toleranz).
+ */
+export function ueberlapptObjekte(a: RaumObjektV1, b: RaumObjektV1): boolean {
+  const ga = objektGrenzen(a);
+  const gb = objektGrenzen(b);
+  const eps = 1e-9;
+  return ga.minX < gb.maxX - eps && ga.maxX > gb.minX + eps && ga.minY < gb.maxY - eps && ga.maxY > gb.minY + eps;
+}
+
+/**
  * Sinnvolle Startposition pro Objektart, immer auf eine gültige Position
  * innerhalb der Raumgrenzen geklemmt — auch wenn der Raum kleiner als das
  * Standardobjekt-Ankerlayout ist.

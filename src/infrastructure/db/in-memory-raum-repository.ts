@@ -1,15 +1,4 @@
-import { RaumRepository, Raum, RaumDokument } from '../../domain/raum';
-
-type CreateData = {
-  id: string;
-  name: string;
-  userId: string;
-  breiteCm: number;
-  laengeCm: number;
-  rasterCm: number;
-  dokumentVersion: number;
-  canvasDocument: RaumDokument;
-};
+import { RaumRepository, RaumCreateData, RaumUpdateData, Raum } from '../../domain/raum';
 
 export class InMemoryRaumRepository implements RaumRepository {
   private raeume = new Map<string, Raum>();
@@ -24,7 +13,7 @@ export class InMemoryRaumRepository implements RaumRepository {
     return this.raeume.get(id) || null;
   }
 
-  async create(data: CreateData): Promise<Raum> {
+  async create(data: RaumCreateData): Promise<Raum> {
     const raum: Raum = {
       ...data,
       createdAt: new Date(),
@@ -35,20 +24,22 @@ export class InMemoryRaumRepository implements RaumRepository {
     return raum;
   }
 
-  async update(id: string, data: {
-    name?: string;
-    breiteCm?: number;
-    laengeCm?: number;
-    rasterCm?: number;
-    dokumentVersion?: number;
-    canvasDocument?: RaumDokument;
-    updatedAt: Date;
-  }): Promise<Raum> {
+  update(id: string, data: RaumUpdateData): Promise<Raum>;
+  update(id: string, data: RaumUpdateData, erwartetUpdatedAt: Date): Promise<Raum | null>;
+  async update(id: string, data: RaumUpdateData, erwartetUpdatedAt?: Date): Promise<Raum | null> {
     const existing = this.raeume.get(id);
-    if (!existing) throw new Error('Not found');
+    if (erwartetUpdatedAt) {
+      // Compare-and-Swap: fehlender oder zwischenzeitlich geänderter Stand
+      // lässt das Update fehlschlagen, statt Änderungen still zu verwerfen.
+      if (!existing || new Date(existing.updatedAt).getTime() !== erwartetUpdatedAt.getTime()) {
+        return null;
+      }
+    } else if (!existing) {
+      throw new Error('Not found');
+    }
 
     const updated: Raum = {
-      ...existing,
+      ...existing!,
       ...data,
       updatedAt: data.updatedAt,
     };

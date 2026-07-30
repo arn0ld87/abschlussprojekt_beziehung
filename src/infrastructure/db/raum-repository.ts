@@ -1,7 +1,7 @@
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { getDb } from './client';
 import { raeume } from './schema';
-import { RaumRepository, Raum, RaumDokument } from '../../domain/raum';
+import { RaumRepository, RaumCreateData, RaumUpdateData, Raum } from '../../domain/raum';
 
 export class DrizzleRaumRepository implements RaumRepository {
   async findAllByUserId(userId: string): Promise<Raum[]> {
@@ -20,33 +20,24 @@ export class DrizzleRaumRepository implements RaumRepository {
     return rows[0] || null;
   }
 
-  async create(data: {
-    id: string;
-    name: string;
-    userId: string;
-    breiteCm: number;
-    laengeCm: number;
-    rasterCm: number;
-    dokumentVersion: number;
-    canvasDocument: RaumDokument;
-  }): Promise<Raum> {
+  async create(data: RaumCreateData): Promise<Raum> {
     const db = getDb();
     const [row] = await db.insert(raeume).values(data).returning();
     return row;
   }
 
-  async update(id: string, data: {
-    name?: string;
-    breiteCm?: number;
-    laengeCm?: number;
-    rasterCm?: number;
-    dokumentVersion?: number;
-    canvasDocument?: RaumDokument;
-    updatedAt: Date;
-  }): Promise<Raum> {
+  update(id: string, data: RaumUpdateData): Promise<Raum>;
+  update(id: string, data: RaumUpdateData, erwartetUpdatedAt: Date): Promise<Raum | null>;
+  async update(id: string, data: RaumUpdateData, erwartetUpdatedAt?: Date): Promise<Raum | null> {
     const db = getDb();
-    const [row] = await db.update(raeume).set(data).where(eq(raeume.id, id)).returning();
-    return row;
+    // Compare-and-Swap: Die updatedAt-Bedingung wandert atomar in dasselbe
+    // UPDATE-Statement — ein paralleler Write dazwischen lässt die Bedingung
+    // fehlschlagen (0 Zeilen) statt Änderungen still zu verwerfen.
+    const bedingung = erwartetUpdatedAt
+      ? and(eq(raeume.id, id), eq(raeume.updatedAt, erwartetUpdatedAt))
+      : eq(raeume.id, id);
+    const [row] = await db.update(raeume).set(data).where(bedingung).returning();
+    return row ?? null;
   }
 
   async softDelete(id: string): Promise<void> {

@@ -18,9 +18,10 @@ import {
   startPosition,
 } from './objekte';
 import { BewegeObjektInputSchema, bewegeObjektAufRaster } from './interaktion';
+import { berechneDuplikatPosition, entferneObjekt, rotiereObjekt } from './aktionen';
 
 export class RaumError extends Error {
-  constructor(public code: 'NOT_FOUND' | 'FORBIDDEN' | 'VALIDATION_ERROR', message: string) {
+  constructor(public code: 'NOT_FOUND' | 'FORBIDDEN' | 'VALIDATION_ERROR' | 'CONFLICT', message: string) {
     super(message);
     this.name = 'RaumError';
   }
@@ -144,11 +145,7 @@ export class RaumService {
     const pos = startPosition(parsed.data.typ, dokument.breiteCm, dokument.laengeCm);
 
     // UUID-IDs; Kollisionen innerhalb des Dokuments werden ausgeschlossen.
-    const vorhandeneIds = new Set(dokument.objekte.map((o) => o.id));
-    let id = `obj_${randomUUID()}`;
-    while (vorhandeneIds.has(id)) {
-      id = `obj_${randomUUID()}`;
-    }
+    const id = this.neueObjektId(new Set(dokument.objekte.map((o) => o.id)));
 
     const objekt: RaumObjektV1 = {
       id,
@@ -219,9 +216,125 @@ export class RaumService {
     });
   }
 
+  /**
+   * Dreht ein Objekt um 90° im Uhrzeigersinn (M2 #53). Passt das gedrehte
+   * Objekt nicht mehr vollständig in den Raum, wird mit VALIDATION_ERROR
+   * abgelehnt und der bestätigte Stand bleibt unverändert.
+   */
+  async rotiereObjekt(userId: string, raumId: string, objektId: string): Promise<Raum> {
+    const dokument = await this.ladeDokumentFuerObjekt(userId, raumId, objektId);
+    const gedreht = rotiereObjekt(dokument.objekte[dokument.index]);
+    return this.schreibeObjekte(raumId, dokument.dokument, gedreht, dokument.index, dokument.updatedAt);
+  }
+
+  /**
+   * Dupliziert ein Objekt mit neuer UUID und rasterversetzter, freier und
+   * gültiger Position (M2 #53). Findet sich keine vom Original abweichende
+   * Position ohne Überlappung, wird verständlich abgelehnt — kein
+   * ungültiges Dokument wird gespeichert.
+   */
+  async dupliziereObjekt(userId: string, raumId: string, objektId: string): Promise<Raum> {
+    const dokument = await this.ladeDokumentFuerObjekt(userId, raumId, objektId);
+    const original = dokument.objekte[dokument.index];
+
+    const ziel = berechneDuplikatPosition(
+      original,
+      dokument.dokument.objekte,
+      dokument.dokument.rasterCm,
+      dokument.dokument.breiteCm,
+      dokument.dokument.laengeCm,
+    );
+    if (!ziel) {
+      throw new RaumError(
+        'VALIDATION_ERROR',
+        'Kein freier Platz für ein Duplikat — alle Rasterpositionen um das Objekt sind belegt oder außerhalb des Raums.',
+      );
+    }
+
+    const id = this.neueObjektId(new Set(dokument.dokument.objekte.map((o) => o.id)));
+
+    const duplikat: RaumObjektV1 = { ...original, id, x_cm: ziel.x_cm, y_cm: ziel.y_cm };
+    return this.schreibeObjekte(raumId, dokument.dokument, duplikat, undefined, dokument.updatedAt);
+  }
+
+  /**
+   * Entfernt genau das ausgewählte Objekt aus dem Dokument (M2 #53).
+   */
+  async entferneObjekt(userId: string, raumId: string, objektId: string): Promise<Raum> {
+    const dokument = await this.ladeDokumentFuerObjekt(userId, raumId, objektId);
+    const objekte = entferneObjekt(dokument.dokument.objekte, objektId);
+    return this.schreibeObjekte(raumId, dokument.dokument, objekte, undefined, dokument.updatedAt);
+  }
+
   async delete(userId: string, raumId: string): Promise<void> {
     await this.getById(userId, raumId); // Checks existence & ownership
     await this.repository.softDelete(raumId);
+  }
+
+  // Lädt das migrierte Dokument und den Index des Zielobjekts — mit
+  // Ownership-Prüfung und NOT_FOUND für unbekannte Objekte. updatedAt des
+  // gelesenen Stands wird für den optimistischen Compare-and-Swap beim
+  // Schreiben weitergereicht.
+  private async ladeDokumentFuerObjekt(userId: string, raumId: string, objektId: string) {
+    const existing = await this.getById(userId, raumId); // Checks existence & ownership
+    const dokument = this.lesenUndMigrieren(existing.canvasDocument);
+    const index = dokument.objekte.findIndex((o) => o.id === objektId);
+    if (index === -1) {
+      throw new RaumError('NOT_FOUND', 'Objekt nicht gefunden.');
+    }
+    return { dokument, objekte: dokument.objekte, index, updatedAt: new Date(existing.updatedAt) };
+  }
+
+  // Validiert das Dokument mit geänderter Objektliste erneut und schreibt es
+  // atomar. Varianten: ein Objekt an Index ersetzen, eines anhängen oder eine
+  // komplette Liste übergeben. Der Schreibvorgang erfolgt als atomarer
+  // Compare-and-Swap über updatedAt des zuvor gelesenen Stands: Hat ein
+  // paralleler Request den Datensatz zwischenzeitlich geändert, schlägt das
+  // Update fehl und es wird ein stabiler CONFLICT-Fehler gemeldet — keine
+  // scheinbar erfolgreiche Mutation, die fremde Änderungen verwirft.
+  private async schreibeObjekte(
+    raumId: string,
+    dokument: RaumDokumentV2,
+    aenderung: RaumObjektV1 | RaumObjektV1[],
+    index: number | undefined,
+    erwartetUpdatedAt: Date,
+  ): Promise<Raum> {
+    const objekte = Array.isArray(aenderung)
+      ? aenderung
+      : index !== undefined
+        ? dokument.objekte.map((o, i) => (i === index ? aenderung : o))
+        : [...dokument.objekte, aenderung];
+
+    const validiert = RaumDokumentV2Schema.safeParse({ ...dokument, objekte });
+    if (!validiert.success) {
+      throw new RaumError('VALIDATION_ERROR', validiert.error.errors[0].message);
+    }
+
+    const aktualisiert = await this.repository.update(
+      raumId,
+      {
+        dokumentVersion: AKTUELLE_DOKUMENT_VERSION,
+        canvasDocument: validiert.data,
+        updatedAt: new Date(),
+      },
+      erwartetUpdatedAt,
+    );
+    if (!aktualisiert) {
+      throw new RaumError(
+        'CONFLICT',
+        'Der Raum wurde zwischenzeitlich geändert — bitte neu laden und die Aktion wiederholen.',
+      );
+    }
+    return aktualisiert;
+  }
+
+  // Erzeugt eine kollisionsfreie obj_-ID innerhalb des Dokuments.
+  private neueObjektId(vorhandeneIds: Set<string>): string {
+    let id = `obj_${randomUUID()}`;
+    while (vorhandeneIds.has(id)) {
+      id = `obj_${randomUUID()}`;
+    }
+    return id;
   }
 
   // Jeder Schreibvorgang validiert das JSONB-Dokument erneut gegen den
