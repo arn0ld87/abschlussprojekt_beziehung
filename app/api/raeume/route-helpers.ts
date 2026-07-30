@@ -23,7 +23,14 @@ export function getService() {
 
 export function handleRaumError(err: unknown) {
   if (err instanceof RaumError) {
-    const status = err.code === 'VALIDATION_ERROR' ? 422 : err.code === 'FORBIDDEN' ? 403 : 404;
+    const status =
+      err.code === 'VALIDATION_ERROR'
+        ? 422
+        : err.code === 'FORBIDDEN'
+          ? 403
+          : err.code === 'CONFLICT'
+            ? 409
+            : 404;
     return NextResponse.json({ code: err.code, error: { code: err.code, message: err.message } }, { status });
   }
   return NextResponse.json(

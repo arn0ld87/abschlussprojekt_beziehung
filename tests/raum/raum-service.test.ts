@@ -307,4 +307,146 @@ describe('RaumService', () => {
       .catch((e) => e);
     expect(errForbidden.code).toBe('FORBIDDEN');
   });
+
+  // --- M2 #53: Objektaktionen ---
+
+  it('dreht ein Objekt in 90-Grad-Schritten und persistiert die Rotation', async () => {
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const id = mit.canvasDocument.objekte[0].id;
+
+    const gedreht = await service.rotiereObjekt('u1', r.id, id);
+    expect(gedreht.canvasDocument.objekte[0].rotation_deg).toBe(90);
+
+    const viermalGedreht = await service.rotiereObjekt('u1', r.id, id)
+      .then(() => service.rotiereObjekt('u1', r.id, id))
+      .then(() => service.rotiereObjekt('u1', r.id, id));
+    expect(viermalGedreht.canvasDocument.objekte[0].rotation_deg).toBe(0);
+  });
+
+  it('lehnt Rotationen ab, die das Objekt aus dem Raum schieben würden', async () => {
+    const r = await service.create('u1', gueltig);
+    // Fenster liegt flach an der linken Wand (15 × 180) — eine 90°-Drehung
+    // um den Mittelpunkt ragt über die linke Raumgrenze hinaus.
+    const mit = await service.addObjekt('u1', r.id, { typ: 'window' });
+    const fenster = mit.canvasDocument.objekte[0];
+
+    const err = await service.rotiereObjekt('u1', r.id, fenster.id).catch((e) => e);
+    expect(err).toBeInstanceOf(RaumError);
+    expect(err.code).toBe('VALIDATION_ERROR');
+
+    // Bestätigter Stand bleibt unverändert
+    const danach = await service.getById('u1', r.id);
+    expect(danach.canvasDocument.objekte[0].rotation_deg).toBe(0);
+  });
+
+  it('dupliziert mit neuer UUID und rasterversetzter Position ohne Kollision', async () => {
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const original = mit.canvasDocument.objekte[0];
+
+    const dupliziert = await service.dupliziereObjekt('u1', r.id, original.id);
+    const objekte = dupliziert.canvasDocument.objekte;
+    expect(objekte).toHaveLength(2);
+
+    const kopie = objekte.find((o) => o.id !== original.id)!;
+    expect(kopie.id).toMatch(/^obj_/);
+    expect(kopie.id).not.toBe(original.id);
+    expect(kopie.typ).toBe(original.typ);
+    expect(kopie.breite_cm).toBe(original.breite_cm);
+    expect(kopie.x_cm === original.x_cm && kopie.y_cm === original.y_cm).toBe(false);
+    expect(kopie.x_cm % 50).toBeCloseTo(0, 6);
+  });
+
+  it('lehnt Duplikate ab, wenn kein freier Platz im Raum ist', async () => {
+    const r = await service.create('u1', { name: 'Eng', breiteCm: 400, laengeCm: 600, rasterCm: 50 });
+    // Tafel (400 breit) in 400-breitem Raum + raumfüllendes Objekt simulieren:
+    // Direkt ein raumfüllendes Objekt in den Bestand schreiben.
+    const mit = await service.addObjekt('u1', r.id, { typ: 'board' });
+    const tafel = mit.canvasDocument.objekte[0];
+    await repo.update(r.id, {
+      canvasDocument: {
+        ...mit.canvasDocument,
+        objekte: [{ ...tafel, tiefe_cm: 600 }],
+      } as never,
+      updatedAt: new Date(),
+    });
+
+    const err = await service.dupliziereObjekt('u1', r.id, tafel.id).catch((e) => e);
+    expect(err).toBeInstanceOf(RaumError);
+    expect(err.code).toBe('VALIDATION_ERROR');
+    expect(err.message).toContain('Kein freier Platz');
+  });
+
+  it('löscht genau das ausgewählte Objekt und keine anderen', async () => {
+    const r = await service.create('u1', gueltig);
+    await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_double' });
+    const [erster, zweiter] = mit.canvasDocument.objekte;
+
+    const geloescht = await service.entferneObjekt('u1', r.id, erster.id);
+    expect(geloescht.canvasDocument.objekte).toHaveLength(1);
+    expect(geloescht.canvasDocument.objekte[0].id).toBe(zweiter.id);
+
+    const err = await service.entferneObjekt('u1', r.id, erster.id).catch((e) => e);
+    expect(err.code).toBe('NOT_FOUND');
+  });
+
+  it('Aktionsfolge bleibt nach Reload erhalten (drehen → duplizieren → verschieben → löschen)', async () => {
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const original = mit.canvasDocument.objekte[0];
+
+    await service.rotiereObjekt('u1', r.id, original.id);
+    const dupliziert = await service.dupliziereObjekt('u1', r.id, original.id);
+    const kopie = dupliziert.canvasDocument.objekte.find((o) => o.id !== original.id)!;
+    await service.bewegeObjekt('u1', r.id, kopie.id, { x_cm: 333, y_cm: 111 });
+    await service.entferneObjekt('u1', r.id, original.id);
+
+    // Reload-Simulation: frische Service-Instanz auf demselben Repository
+    const reload = await new RaumService(repo).getById('u1', r.id);
+    expect(reload.canvasDocument.objekte).toHaveLength(1);
+    const uebrig = reload.canvasDocument.objekte[0];
+    expect(uebrig.id).toBe(kopie.id);
+    expect(uebrig.rotation_deg).toBe(90);
+    expect(uebrig.x_cm).toBe(350);
+    expect(uebrig.y_cm).toBe(100);
+  });
+
+  // --- Optimistische Nebenläufigkeitskontrolle (Compare-and-Swap, PR #80) ---
+
+  it('CAS-Update gelingt mit aktuellem updatedAt und schlägt mit veraltetem fehl', async () => {
+    const r = await service.create('u1', gueltig);
+
+    const ok = await repo.update(r.id, { name: 'Neu', updatedAt: new Date() }, new Date(r.updatedAt));
+    expect(ok).not.toBeNull();
+    expect(ok!.name).toBe('Neu');
+
+    // Veralteter Vergleichswert (Stand vor dem erfolgreichen Update) →
+    // null statt stiller Überschreibung. Explizit älterer Zeitstempel,
+    // damit der Test unabhängig von Millisekunden-Auflösung ist.
+    const veraltet = new Date(new Date(ok!.updatedAt).getTime() - 1000);
+    const stale = await repo.update(r.id, { name: 'Verloren', updatedAt: new Date() }, veraltet);
+    expect(stale).toBeNull();
+
+    const danach = await service.getById('u1', r.id);
+    expect(danach.name).toBe('Neu');
+  });
+
+  it('Objektaktion meldet CONFLICT statt scheinbar erfolgreicher Mutation bei verlorenem CAS', async () => {
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const id = mit.canvasDocument.objekte[0].id;
+
+    // Simuliert einen parallelen Write zwischen Lesen und Schreiben:
+    // Das Repository lehnt den Compare-and-Swap ab.
+    const origUpdate = repo.update.bind(repo);
+    repo.update = (async (raumId: string, data: never, erwartet?: Date) =>
+      erwartet ? null : origUpdate(raumId, data)) as typeof repo.update;
+
+    const err = await service.rotiereObjekt('u1', r.id, id).catch((e) => e);
+    expect(err).toBeInstanceOf(RaumError);
+    expect(err.code).toBe('CONFLICT');
+    expect(err.message).toContain('zwischenzeitlich geändert');
+  });
 });

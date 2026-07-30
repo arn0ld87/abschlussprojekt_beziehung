@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST as addObjekt } from '../../app/api/raeume/[id]/objekte/route';
-import { PATCH as bewegeObjekt } from '../../app/api/raeume/[id]/objekte/[objektId]/route';
+import { PATCH as bewegeObjekt, DELETE as entferneObjekt } from '../../app/api/raeume/[id]/objekte/[objektId]/route';
+import { POST as objektAktion } from '../../app/api/raeume/[id]/objekte/[objektId]/aktionen/route';
 import { setGlobalRaumService, getDefaultRaumService } from '../../src/services/raum';
 import { setGlobalAuthService } from '../../src/services/auth';
 import { AuthService } from '../../src/services/auth/auth-service';
@@ -168,5 +169,162 @@ describe('POST /api/raeume/[id]/objekte (M2 #51)', () => {
     expect(res.status).toBe(422);
     const data = await res.json();
     expect(data.code).toBe('VALIDATION_ERROR');
+  });
+
+  // --- M2 #53: Objektaktionen ---
+
+  function aktionReq(body?: unknown) {
+    const headers = new Headers();
+    if (currentSessionToken) {
+      headers.set('Cookie', `sitzplan_session=${currentSessionToken}`);
+    }
+    return new NextRequest('http://localhost/api/raeume/x/objekte/y/aktionen', {
+      method: 'POST',
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  function deleteReq() {
+    const headers = new Headers();
+    if (currentSessionToken) {
+      headers.set('Cookie', `sitzplan_session=${currentSessionToken}`);
+    }
+    return new NextRequest('http://localhost/api/raeume/x/objekte/y', { method: 'DELETE', headers });
+  }
+
+  it('POST aktionen 200 rotieren persistiert die 90°-Drehung', async () => {
+    await setSession(mockUser);
+    const service = getDefaultRaumService();
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const objektId = mit.canvasDocument.objekte[0].id;
+
+    const res = await objektAktion(aktionReq({ aktion: 'rotieren' }), {
+      params: Promise.resolve({ id: r.id, objektId }),
+    });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.canvasDocument.objekte[0].rotation_deg).toBe(90);
+  });
+
+  it('POST aktionen 200 duplizieren erzeugt eine neue Objekt-ID', async () => {
+    await setSession(mockUser);
+    const service = getDefaultRaumService();
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const objektId = mit.canvasDocument.objekte[0].id;
+
+    const res = await objektAktion(aktionReq({ aktion: 'duplizieren' }), {
+      params: Promise.resolve({ id: r.id, objektId }),
+    });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.canvasDocument.objekte).toHaveLength(2);
+    const ids = data.canvasDocument.objekte.map((o: { id: string }) => o.id);
+    expect(new Set(ids).size).toBe(2);
+  });
+
+  it('POST aktionen 401/403/404/422', async () => {
+    const service = getDefaultRaumService();
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const objektId = mit.canvasDocument.objekte[0].id;
+
+    // 401
+    await setSession(null);
+    expect(
+      (await objektAktion(aktionReq({ aktion: 'rotieren' }), { params: Promise.resolve({ id: r.id, objektId }) })).status,
+    ).toBe(401);
+
+    await setSession(mockUser);
+    // 403 — Raum eines anderen Nutzers
+    const fremd = await service.create('other', gueltig);
+    const fremdMit = await service.addObjekt('other', fremd.id, { typ: 'board' });
+    expect(
+      (
+        await objektAktion(aktionReq({ aktion: 'rotieren' }), {
+          params: Promise.resolve({ id: fremd.id, objektId: fremdMit.canvasDocument.objekte[0].id }),
+        })
+      ).status,
+    ).toBe(403);
+
+    // 404 — unbekanntes Objekt
+    expect(
+      (
+        await objektAktion(aktionReq({ aktion: 'rotieren' }), {
+          params: Promise.resolve({ id: r.id, objektId: 'obj_unbekannt' }),
+        })
+      ).status,
+    ).toBe(404);
+
+    // 422 — unbekannte Aktion mit stabilem Fehlercode
+    const res = await objektAktion(aktionReq({ aktion: 'explodieren' }), {
+      params: Promise.resolve({ id: r.id, objektId }),
+    });
+    expect(res.status).toBe(422);
+    expect((await res.json()).code).toBe('VALIDATION_ERROR');
+  });
+
+  it('DELETE 204 entfernt das Objekt', async () => {
+    await setSession(mockUser);
+    const service = getDefaultRaumService();
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'door' });
+    const objektId = mit.canvasDocument.objekte[0].id;
+
+    const res = await entferneObjekt(deleteReq(), { params: Promise.resolve({ id: r.id, objektId }) });
+    expect(res.status).toBe(204);
+    expect((await service.getById('u1', r.id)).canvasDocument.objekte).toHaveLength(0);
+  });
+
+  it('DELETE 401/403/404', async () => {
+    const service = getDefaultRaumService();
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'door' });
+    const objektId = mit.canvasDocument.objekte[0].id;
+
+    await setSession(null);
+    expect((await entferneObjekt(deleteReq(), { params: Promise.resolve({ id: r.id, objektId }) })).status).toBe(401);
+
+    await setSession(mockUser);
+    const fremd = await service.create('other', gueltig);
+    const fremdMit = await service.addObjekt('other', fremd.id, { typ: 'door' });
+    expect(
+      (
+        await entferneObjekt(deleteReq(), {
+          params: Promise.resolve({ id: fremd.id, objektId: fremdMit.canvasDocument.objekte[0].id }),
+        })
+      ).status,
+    ).toBe(403);
+
+    expect(
+      (await entferneObjekt(deleteReq(), { params: Promise.resolve({ id: r.id, objektId: 'obj_unbekannt' }) })).status,
+    ).toBe(404);
+  });
+
+  it('POST aktionen 409 bei verlorenem Compare-and-Swap (Service→Route-Kette)', async () => {
+    await setSession(mockUser);
+    const service = getDefaultRaumService();
+    const r = await service.create('u1', gueltig);
+    const mit = await service.addObjekt('u1', r.id, { typ: 'table_single' });
+    const objektId = mit.canvasDocument.objekte[0].id;
+
+    // Simuliert einen parallelen Write zwischen Lesen und Schreiben:
+    // Das Repository lehnt das CAS-Update ab.
+    const origUpdate = raumRepo.update.bind(raumRepo);
+    raumRepo.update = (async (id: string, data: never, erwartet?: Date) =>
+      erwartet ? null : origUpdate(id, data)) as typeof raumRepo.update;
+
+    const res = await objektAktion(aktionReq({ aktion: 'rotieren' }), {
+      params: Promise.resolve({ id: r.id, objektId }),
+    });
+    expect(res.status).toBe(409);
+    const data = await res.json();
+    expect(data.code).toBe('CONFLICT');
+
+    // Kein scheinbar erfolgreicher Write: Stand unverändert
+    raumRepo.update = origUpdate;
+    expect((await service.getById('u1', r.id)).canvasDocument.objekte[0].rotation_deg).toBe(0);
   });
 });

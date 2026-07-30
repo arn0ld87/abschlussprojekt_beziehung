@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import Button from '../../../../../src/ui/Button';
 import { MIN_RASTER_CM } from '../../../../../src/domain/raum/koordinaten';
 import { RAUM_OBJEKT_TYPEN, STANDARD_OBJEKTE } from '../../../../../src/domain/raum/objekte';
 import type { RaumObjektTyp, RaumObjektV1 } from '../../../../../src/domain/raum/objekte';
+import { TASTATURKUERZEL, aktionFuerTaste, istEingabefeld } from './tastatur';
 
 // react-konva braucht den Browser — bewusst ohne SSR geladen (Ladezustand sichtbar).
 const RaumCanvas = dynamic(() => import('./RaumCanvas'), {
@@ -41,11 +42,10 @@ export interface RaumEditorProps {
   };
 }
 
-// Editor-Shell für M2 #49–#51: Raumdaten anzeigen, Maße/Raster pflegen und
-// Standardobjekte aus der Möbelpalette einfügen. Objektinteraktion (#52):
-// Auswahl per Maus/Tastatur, Drag-and-drop mit serverseitigem Rasterfang und
-// Rollback auf den letzten bestätigten Stand bei Speicherfehlern.
-// Objektaktionen (#53) folgen in einem eigenen Slice.
+// Editor-Shell für M2 #49–#53: Raumdaten anzeigen, Maße/Raster pflegen,
+// Standardobjekte aus der Möbelpalette einfügen, Auswahl und Drag-and-drop
+// mit serverseitigem Rasterfang sowie Objektaktionen (Drehen, Duplizieren,
+// Löschen) über Toolbar und dokumentierte Tastaturkürzel.
 export default function RaumEditor({ raum }: RaumEditorProps) {
   const router = useRouter();
   const [name, setName] = useState(raum.name);
@@ -58,6 +58,20 @@ export default function RaumEditor({ raum }: RaumEditorProps) {
   // Remount-Schlüssel: nach einem fehlgeschlagenen Speichern wird der Canvas
   // neu aufgesetzt und zeigt damit wieder den letzten bestätigten Stand.
   const [canvasSchluessel, setCanvasSchluessel] = useState(0);
+  // Editor-Wurzel für die Fokusbindung der Ein-Zeichen-Shortcuts (WCAG 2.1.4).
+  const editorRef = useRef<HTMLDivElement>(null);
+  // Fokussierbarer Canvas-Bereich: nach einer Auswahl per Maus liegt der
+  // Fokus sonst auf <body> — die Kürzel R/D wären dann tot.
+  const canvasBereichRef = useRef<HTMLDivElement>(null);
+
+  // Auswahl setzen und den Canvas-Bereich fokussieren, damit die
+  // fokusgebundenen Tastaturkürzel (R/D) direkt danach greifen.
+  const handleAuswaehlen = (id: string | null) => {
+    setAusgewaehltId(id);
+    if (id) {
+      canvasBereichRef.current?.focus({ preventScroll: true });
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -171,6 +185,62 @@ export default function RaumEditor({ raum }: RaumEditorProps) {
     }
   };
 
+  // Objektaktionen (M2 #53): Drehen, Duplizieren und Löschen des aktuell
+  // ausgewählten Objekts — über Toolbar und Tastaturkürzel erreichbar.
+  const handleObjektAktion = async (aktion: 'rotieren' | 'duplizieren' | 'loeschen') => {
+    if (isSubmitting || !ausgewaehltId) return;
+
+    if (aktion === 'loeschen' && !window.confirm('Ausgewähltes Objekt wirklich löschen?')) return;
+
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const res =
+        aktion === 'loeschen'
+          ? await fetch(`/api/raeume/${raum.id}/objekte/${ausgewaehltId}`, { method: 'DELETE' })
+          : await fetch(`/api/raeume/${raum.id}/objekte/${ausgewaehltId}/aktionen`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ aktion }),
+            });
+
+      if (res.ok) {
+        if (aktion === 'loeschen') {
+          setAusgewaehltId(null);
+        }
+        router.refresh();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error?.message || 'Aktion konnte nicht ausgeführt werden.');
+      }
+    } catch {
+      setError('Aktion konnte nicht ausgeführt werden.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Tastaturkürzel (R/D/Entf) gelten nur bei aktiver Auswahl und niemals
+  // in Eingabefeldern. Browser-/Systemkürzel mit Modifiern (z. B. Cmd+R,
+  // Ctrl+D) bleiben unangetastet. Ein-Zeichen-Shortcuts (R/D) sind
+  // fokusgebunden (WCAG 2.1.4): Sie feuern nur, wenn der Fokus innerhalb
+  // des Editors liegt — Entf/Backspace sind davon ausgenommen.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!ausgewaehltId || istEingabefeld(e.target)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const aktion = aktionFuerTaste(e.key);
+      if (!aktion) return;
+      if (aktion !== 'loeschen' && !editorRef.current?.contains(document.activeElement)) return;
+      e.preventDefault();
+      void handleObjektAktion(aktion);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ausgewaehltId, isSubmitting]);
+
   const fieldStyle = { width: '100%', padding: '0.5rem' } as const;
   const labelStyle = { display: 'block', marginBottom: '0.25rem' } as const;
 
@@ -195,18 +265,29 @@ export default function RaumEditor({ raum }: RaumEditorProps) {
     vorschau.rasterCm !== raum.rasterCm;
   const dragAktiv = !isSubmitting && !vorschauUngespeichert;
 
+  // Aktuell ausgewähltes Objekt — nach einem Refresh kann die ID veraltet
+  // sein, dann wird keine Toolbar angezeigt.
+  const ausgewaehltObjekt = ausgewaehltId ? raum.objekte.find((o) => o.id === ausgewaehltId) : undefined;
+
   return (
-    <div>
-      <RaumCanvas
-        key={canvasSchluessel}
-        breiteCm={vorschau.breiteCm}
-        laengeCm={vorschau.laengeCm}
-        rasterCm={vorschau.rasterCm}
-        objekte={raum.objekte}
-        ausgewaehltId={ausgewaehltId}
-        onAuswaehlen={setAusgewaehltId}
-        onBewegt={dragAktiv ? handleBewegt : undefined}
-      />
+    <div ref={editorRef}>
+      <div
+        ref={canvasBereichRef}
+        tabIndex={-1}
+        aria-label="Raum-Canvas — Auswahl eines Objekts aktiviert die Tastaturkürzel R/D/Entf"
+        style={{ outline: 'none' }}
+      >
+        <RaumCanvas
+          key={canvasSchluessel}
+          breiteCm={vorschau.breiteCm}
+          laengeCm={vorschau.laengeCm}
+          rasterCm={vorschau.rasterCm}
+          objekte={raum.objekte}
+          ausgewaehltId={ausgewaehltId}
+          onAuswaehlen={handleAuswaehlen}
+          onBewegt={dragAktiv ? handleBewegt : undefined}
+        />
+      </div>
       {vorschauUngespeichert && (
         <p role="note" style={{ color: '#92400e', marginTop: '-1rem', marginBottom: '2rem' }}>
           Ungespeicherte Maß-/Rasteränderungen — Verschieben ist erst nach dem Speichern möglich.
@@ -252,6 +333,54 @@ export default function RaumEditor({ raum }: RaumEditorProps) {
               </li>
             ))}
           </ul>
+        </>
+      )}
+
+      {ausgewaehltObjekt && (
+        <>
+          <h3>Ausgewähltes Objekt: {STANDARD_OBJEKTE[ausgewaehltObjekt.typ].label}</h3>
+          <div
+            role="toolbar"
+            aria-label="Aktionen für das ausgewählte Objekt"
+            style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.5rem' }}
+          >
+            <Button
+              type="button"
+              variant="soft"
+              disabled={isSubmitting}
+              ariaLabel="Objekt um 90 Grad drehen (Taste R)"
+              onClick={() => handleObjektAktion('rotieren')}
+            >
+              ⟳ 90° drehen
+            </Button>
+            <Button
+              type="button"
+              variant="soft"
+              disabled={isSubmitting}
+              ariaLabel="Objekt duplizieren (Taste D)"
+              onClick={() => handleObjektAktion('duplizieren')}
+            >
+              ⧉ Duplizieren
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={isSubmitting}
+              ariaLabel="Objekt löschen (Taste Entf)"
+              onClick={() => handleObjektAktion('loeschen')}
+            >
+              ✕ Löschen
+            </Button>
+          </div>
+          <p style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: 0, marginBottom: '2rem' }}>
+            Tastaturkürzel:{' '}
+            {TASTATURKUERZEL.map((k, i) => (
+              <span key={k.aktion}>
+                {i > 0 && ' · '}
+                <kbd>{k.tasten}</kbd> {k.beschreibung}
+              </span>
+            ))}
+          </p>
         </>
       )}
 
