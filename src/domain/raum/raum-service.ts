@@ -4,9 +4,9 @@ import {
   CreateRaumInputSchema,
   UpdateRaumInputSchema,
   RaumDokumentSchema,
-  RaumDokumentV2Schema,
+  RaumDokumentV3Schema,
   Raum,
-  RaumDokumentV2,
+  RaumDokumentV3,
   migriereRaumDokument,
 } from './raum';
 import { RaumRepository } from './raum-repository-port';
@@ -19,6 +19,12 @@ import {
 } from './objekte';
 import { BewegeObjektInputSchema, bewegeObjektAufRaster } from './interaktion';
 import { berechneDuplikatPosition, entferneObjekt, rotiereObjekt } from './aktionen';
+import {
+  SitzplatzV1,
+  dupliziereSitzplaetze,
+  entferneSitzplaetzeVon,
+  erzeugeSitzplaetze,
+} from './sitzplaetze';
 
 export class RaumError extends Error {
   constructor(public code: 'NOT_FOUND' | 'FORBIDDEN' | 'VALIDATION_ERROR' | 'CONFLICT', message: string) {
@@ -110,7 +116,7 @@ export class RaumService {
             laengeCm,
             rasterCm,
             dokumentVersion: AKTUELLE_DOKUMENT_VERSION,
-            canvasDocument: this.buildDokument(breiteCm, laengeCm, rasterCm, dokument.objekte),
+            canvasDocument: this.buildDokument(breiteCm, laengeCm, rasterCm, dokument.objekte, dokument.sitzplaetze),
           }
         : {}),
       updatedAt: new Date(),
@@ -157,9 +163,12 @@ export class RaumService {
       rotation_deg: std.rotationDeg,
     };
 
-    const validiert = RaumDokumentV2Schema.safeParse({
+    // Tischobjekte erhalten ihre deterministischen Sitzplätze atomar im
+    // selben validierten Dokument (M2 #54).
+    const validiert = RaumDokumentV3Schema.safeParse({
       ...dokument,
       objekte: [...dokument.objekte, objekt],
+      sitzplaetze: [...dokument.sitzplaetze, ...erzeugeSitzplaetze(objekt)],
     });
     if (!validiert.success) {
       throw new RaumError('VALIDATION_ERROR', validiert.error.errors[0].message);
@@ -204,7 +213,9 @@ export class RaumService {
 
     const objekte = dokument.objekte.map((o, i) => (i === index ? { ...o, x_cm: ziel.x_cm, y_cm: ziel.y_cm } : o));
 
-    const validiert = RaumDokumentV2Schema.safeParse({ ...dokument, objekte });
+    // Sitzplätze bleiben unverändert: lokale Anker und IDs sind stabil
+    // gegenüber Verschieben (M2 #54).
+    const validiert = RaumDokumentV3Schema.safeParse({ ...dokument, objekte });
     if (!validiert.success) {
       throw new RaumError('VALIDATION_ERROR', validiert.error.errors[0].message);
     }
@@ -254,16 +265,24 @@ export class RaumService {
     const id = this.neueObjektId(new Set(dokument.dokument.objekte.map((o) => o.id)));
 
     const duplikat: RaumObjektV1 = { ...original, id, x_cm: ziel.x_cm, y_cm: ziel.y_cm };
-    return this.schreibeObjekte(raumId, dokument.dokument, duplikat, undefined, dokument.updatedAt);
+    // Sitzplätze werden mit neuen, vollständig disjunkten IDs dupliziert
+    // (M2 #54) — atomar im selben validierten Command.
+    const sitzplaetze = [
+      ...dokument.dokument.sitzplaetze,
+      ...dupliziereSitzplaetze(dokument.dokument.sitzplaetze, original.id, id),
+    ];
+    return this.schreibeObjekte(raumId, dokument.dokument, duplikat, undefined, dokument.updatedAt, sitzplaetze);
   }
 
   /**
-   * Entfernt genau das ausgewählte Objekt aus dem Dokument (M2 #53).
+   * Entfernt genau das ausgewählte Objekt aus dem Dokument (M2 #53) — seine
+   * Sitzplätze werden im selben validierten Command mit entfernt (M2 #54).
    */
   async entferneObjekt(userId: string, raumId: string, objektId: string): Promise<Raum> {
     const dokument = await this.ladeDokumentFuerObjekt(userId, raumId, objektId);
     const objekte = entferneObjekt(dokument.dokument.objekte, objektId);
-    return this.schreibeObjekte(raumId, dokument.dokument, objekte, undefined, dokument.updatedAt);
+    const sitzplaetze = entferneSitzplaetzeVon(dokument.dokument.sitzplaetze, objektId);
+    return this.schreibeObjekte(raumId, dokument.dokument, objekte, undefined, dokument.updatedAt, sitzplaetze);
   }
 
   async delete(userId: string, raumId: string): Promise<void> {
@@ -287,17 +306,20 @@ export class RaumService {
 
   // Validiert das Dokument mit geänderter Objektliste erneut und schreibt es
   // atomar. Varianten: ein Objekt an Index ersetzen, eines anhängen oder eine
-  // komplette Liste übergeben. Der Schreibvorgang erfolgt als atomarer
+  // komplette Liste übergeben. Sitzplätze werden standardmäßig unverändert
+  // übernommen (stabil bei Drehen); Duplizieren und Löschen übergeben eine
+  // angepasste Liste. Der Schreibvorgang erfolgt als atomarer
   // Compare-and-Swap über updatedAt des zuvor gelesenen Stands: Hat ein
   // paralleler Request den Datensatz zwischenzeitlich geändert, schlägt das
   // Update fehl und es wird ein stabiler CONFLICT-Fehler gemeldet — keine
   // scheinbar erfolgreiche Mutation, die fremde Änderungen verwirft.
   private async schreibeObjekte(
     raumId: string,
-    dokument: RaumDokumentV2,
+    dokument: RaumDokumentV3,
     aenderung: RaumObjektV1 | RaumObjektV1[],
     index: number | undefined,
     erwartetUpdatedAt: Date,
+    sitzplaetze?: SitzplatzV1[],
   ): Promise<Raum> {
     const objekte = Array.isArray(aenderung)
       ? aenderung
@@ -305,7 +327,11 @@ export class RaumService {
         ? dokument.objekte.map((o, i) => (i === index ? aenderung : o))
         : [...dokument.objekte, aenderung];
 
-    const validiert = RaumDokumentV2Schema.safeParse({ ...dokument, objekte });
+    const validiert = RaumDokumentV3Schema.safeParse({
+      ...dokument,
+      objekte,
+      sitzplaetze: sitzplaetze ?? dokument.sitzplaetze,
+    });
     if (!validiert.success) {
       throw new RaumError('VALIDATION_ERROR', validiert.error.errors[0].message);
     }
@@ -344,19 +370,21 @@ export class RaumService {
     laengeCm: number,
     rasterCm: number,
     objekte: RaumObjektV1[] = [],
-  ): RaumDokumentV2 {
-    return RaumDokumentV2Schema.parse({
+    sitzplaetze: SitzplatzV1[] = [],
+  ): RaumDokumentV3 {
+    return RaumDokumentV3Schema.parse({
       version: AKTUELLE_DOKUMENT_VERSION,
       breiteCm,
       laengeCm,
       rasterCm,
       objekte,
+      sitzplaetze,
     });
   }
 
   // Liest ein persistiertes Dokument jeder bekannten Version und migriert es
   // validiert auf die aktuelle Version (ADR-0003).
-  private lesenUndMigrieren(canvasDocument: unknown): RaumDokumentV2 {
+  private lesenUndMigrieren(canvasDocument: unknown): RaumDokumentV3 {
     const parsed = RaumDokumentSchema.safeParse(canvasDocument);
     if (!parsed.success) {
       throw new RaumError('VALIDATION_ERROR', 'Persistiertes Raumdokument ist ungültig oder veraltet.');

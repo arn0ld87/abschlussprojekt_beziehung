@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { RaumService, RaumError } from '../../src/domain/raum';
+import { RaumService, RaumError, migriereRaumDokument } from '../../src/domain/raum';
 import { InMemoryRaumRepository } from '../../src/infrastructure/db/in-memory-raum-repository';
 
 describe('RaumService', () => {
@@ -18,8 +18,8 @@ describe('RaumService', () => {
     expect(r.id).toMatch(/^raum_/);
     expect(r.name).toBe('Klassenraum A');
     expect(r.userId).toBe('u1');
-    expect(r.dokumentVersion).toBe(2);
-    expect(r.canvasDocument.version).toBe(2);
+    expect(r.dokumentVersion).toBe(3);
+    expect(r.canvasDocument.version).toBe(3);
     expect(r.canvasDocument.breiteCm).toBe(800);
     expect(r.canvasDocument.laengeCm).toBe(600);
     expect(r.canvasDocument.rasterCm).toBe(50);
@@ -29,7 +29,7 @@ describe('RaumService', () => {
   it('canvas document contains no Konva- or React-specific keys', async () => {
     const r = await service.create('u1', gueltig);
     const keys = Object.keys(r.canvasDocument);
-    expect(keys.sort()).toEqual(['breiteCm', 'laengeCm', 'objekte', 'rasterCm', 'version']);
+    expect(keys.sort()).toEqual(['breiteCm', 'laengeCm', 'objekte', 'rasterCm', 'sitzplaetze', 'version']);
     // JSON-Roundtrip ohne Verlust — keine Klasseninstanzen (Konva-Nodes) im Dokument
     expect(JSON.parse(JSON.stringify(r.canvasDocument))).toEqual(r.canvasDocument);
   });
@@ -95,7 +95,7 @@ describe('RaumService', () => {
     const updated = await service.update('u1', r.id, { rasterCm: 25 });
     expect(updated.rasterCm).toBe(25);
     expect(updated.canvasDocument.rasterCm).toBe(25);
-    expect(updated.canvasDocument.version).toBe(2);
+    expect(updated.canvasDocument.version).toBe(3);
   });
 
   it('rejects update when merged raster exceeds the smaller side', async () => {
@@ -122,7 +122,7 @@ describe('RaumService', () => {
     expect(data.breiteCm).toBe(800);
     expect(data.laengeCm).toBe(600);
     expect(data.rasterCm).toBe(25);
-    expect(data.canvasDocument).toMatchObject({ version: 2, breiteCm: 800, laengeCm: 600, rasterCm: 25 });
+    expect(data.canvasDocument).toMatchObject({ version: 3, breiteCm: 800, laengeCm: 600, rasterCm: 25 });
     updateSpy.mockRestore();
   });
 
@@ -231,7 +231,7 @@ describe('RaumService', () => {
     expect(err.message).toContain('passt');
   });
 
-  it('migriert V1-Bestandsdokumente beim nächsten Schreibvorgang validiert nach V2', async () => {
+  it('migriert V1-Bestandsdokumente beim nächsten Schreibvorgang validiert nach V3', async () => {
     const r = await service.create('u1', gueltig);
     // Simuliert einen V1-Bestandsstand (Schemaversion 1, leere Objektliste)
     await repo.update(r.id, {
@@ -241,9 +241,10 @@ describe('RaumService', () => {
     });
 
     const updated = await service.addObjekt('u1', r.id, { typ: 'table_single' });
-    expect(updated.canvasDocument.version).toBe(2);
-    expect(updated.dokumentVersion).toBe(2);
+    expect(updated.canvasDocument.version).toBe(3);
+    expect(updated.dokumentVersion).toBe(3);
     expect(updated.canvasDocument.objekte).toHaveLength(1);
+    expect(migriereRaumDokument(updated.canvasDocument).sitzplaetze).toHaveLength(1);
 
     // Auch reine Metadaten-Updates lesen V1 ohne Fehler
     await repo.update(r.id, {

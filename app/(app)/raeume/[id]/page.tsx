@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '../../../../src/services/auth';
-import { RaumError } from '../../../../src/domain/raum';
+import { RaumError, migriereRaumDokument } from '../../../../src/domain/raum';
 import { getDefaultRaumService } from '../../../../src/services/raum';
 
 import Link from 'next/link';
@@ -29,6 +29,10 @@ export default async function RaumDetailPage({ params }: { params: Promise<{ id:
     throw err;
   }
 
+  // Anzeige erfolgt immer aus dem migrierten, aktuellen Dokumentstand —
+  // Sitzplätze (V3) erscheinen so auch bei älteren persistierten Ständen.
+  const dokument = migriereRaumDokument(raum.canvasDocument);
+
   return (
     <Container>
       <div style={{ marginBottom: '2rem' }}>
@@ -50,7 +54,8 @@ export default async function RaumDetailPage({ params }: { params: Promise<{ id:
           laengeCm: raum.laengeCm,
           rasterCm: raum.rasterCm,
           dokumentVersion: raum.dokumentVersion,
-          objekte: raum.canvasDocument.objekte,
+          objekte: dokument.objekte,
+          sitzplaetze: dokument.sitzplaetze,
         }}
       />
     </Container>
