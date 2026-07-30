@@ -21,6 +21,8 @@ type Job = {
   name?: string;
   permissions?: unknown;
   steps?: Step[];
+  services?: Record<string, { image?: string; env?: Record<string, string>; ports?: string[] }>;
+  env?: Record<string, string>;
 };
 
 type StepShape = {
@@ -123,14 +125,37 @@ describe("ci workflow contract", () => {
     ]);
   });
 
-  it("test job: checkout, setup-node (node 24), setup-bun (bun-version-file), install, run test", () => {
+  it("test job: checkout, setup-node (node 24), setup-bun (bun-version-file), install, migrate, run test", () => {
     assertJob("test", jobs.test!, [
       CHECKOUT_STEP,
       SETUP_NODE_STEP,
       SETUP_BUN_STEP,
       INSTALL_STEP,
+      { run: "bun run db:migrate" },
       { run: "bun run test" },
     ]);
+  });
+
+  // Ohne PostgreSQL-Service und TEST_DATABASE_URL ueberspringt
+  // tests/raum/raum-postgres.integration.test.ts den kompletten
+  // M2-Akzeptanzpfad (#55) still, und das Test-Gate waere gruen, ohne
+  // Persistenz, Migration, Ownership und Reload je geprueft zu haben.
+  it("test job runs a real PostgreSQL service so the M2 acceptance path cannot be silently skipped", () => {
+    const testJob = jobs.test!;
+    const postgres = testJob.services?.postgres;
+    expect(postgres, "test job must declare a postgres service container").toBeDefined();
+    expect(postgres!.image, "postgres service image").toMatch(/^postgres:/);
+    expect(postgres!.ports, "postgres service must expose 5432 to the runner").toContain("5432:5432");
+
+    const testDatabaseUrl = testJob.env?.TEST_DATABASE_URL;
+    expect(
+      testDatabaseUrl,
+      "TEST_DATABASE_URL must be set, otherwise describe.skipIf skips the acceptance suite",
+    ).toBeDefined();
+    expect(testDatabaseUrl).toMatch(/^postgres:\/\//);
+    expect(testJob.env?.DATABASE_URL, "DATABASE_URL is required by bun run db:migrate").toMatch(
+      /^postgres:\/\//,
+    );
   });
 
   it("build job: checkout, setup-node (node 24), setup-bun (bun-version-file), install, run build", () => {

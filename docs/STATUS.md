@@ -69,7 +69,7 @@ Folgeschritt (Lead): formale Schließung des Parent-Issues [#4](https://github.c
 
 ## Nächster Freigabepunkt
 
-Alle sechs M2-Child-Slices (#49–#54) und die M2-Akzeptanz [#55](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/55) sind gemergt; das Parent-Issue [#4](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) bleibt bis zur formalen M2-Schließung durch den Lead offen. Die aktuelle Frontier ist [M3 — Persistente Pläne](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5): Autosave, Versionen und Restore mit neuer Revision je Restore (siehe `docs/superpowers/specs/2026-07-29-m2-m3-ticketing-design.md`).
+Alle sechs M2-Child-Slices (#49–#54) und die M2-Akzeptanz [#55](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/55) sind gemergt. Die Parent-Issues [#3](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) (M1) und [#4](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) (M2) sind beide noch offen. Der nächste Freigabepunkt ist deshalb die formale Schließung dieser beiden Parent-Issues und der zugehörigen GitHub-Milestones durch den Lead — nicht der Start eines M3-Slices. [M3 — Persistente Pläne](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) (Autosave, Versionen und Restore mit neuer Revision je Restore, siehe `docs/superpowers/specs/2026-07-29-m2-m3-ticketing-design.md`) wird erst dann zur Frontier und darf bis dahin nicht als ausführbare Arbeit ausgewählt werden.
 
 ## Milestone-Frontier
 
@@ -78,7 +78,7 @@ Alle sechs M2-Child-Slices (#49–#54) und die M2-Akzeptanz [#55](https://github
 | M0 | [#2 Foundation: Repository und Agentenworkflow](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/2) | abgeschlossen (29.07.2026, Milestone und Issues formal geschlossen) |
 | M1 | [#3 Klassen: Auth, Klassen und Schülerprofile](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) | alle Child-Slices (#42–#46) gemergt; formale Schließung ausstehend |
 | M2 | [#4 Raumeditor: Maße, Möbel und Sitzplätze](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) | inhaltlich abgeschlossen (30.07.2026); formale Schließung von Parent-Issue und Milestone ausstehend |
-| M3 | [#5 Persistente Pläne: Autosave, Versionen und Restore](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) | aktuelle Frontier |
+| M3 | [#5 Persistente Pläne: Autosave, Versionen und Restore](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) | blockiert durch die formale Schließung von M1 (#3) und M2 (#4) |
 | M4 | [#6 Optimierer: Regeln, Konflikte und reproduzierbare Vorschläge](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/6) | blockiert durch M3 |
 | M5 | [#7 KI-Assistent: BYOK, Chat und validierte Commands](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/7) | blockiert durch M4 |
 | M6 | [#8 Ausgabe und PWA: Entwürfe, PDF, PNG und Import/Export](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/8) | blockiert durch M3 |
