@@ -38,6 +38,7 @@ export const ROUTE_META: Record<string, RouteMetaEntry> = {
   "api:/api/klassen/[id]": { status: "green" },
   "api:/api/raeume": { status: "green", hint: "M2-49" },
   "api:/api/raeume/[id]": { status: "green", hint: "M2-49" },
+  "api:/api/raeume/[id]/objekte": { status: "green", hint: "M2-51" },
   "api:/api/klassen/[id]/import/preview": { status: "yellow", hint: "Login nötig · M1-46" },
   "api:/api/klassen/[id]/import/commit": { status: "yellow", hint: "Login nötig · M1-46" },
   "api:/api/klassen/[id]/schueler": { status: "green" },

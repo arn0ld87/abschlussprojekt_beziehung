@@ -1,7 +1,7 @@
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { getDb } from './client';
 import { raeume } from './schema';
-import { RaumRepository, Raum, RaumDokumentV1 } from '../../domain/raum';
+import { RaumRepository, Raum, RaumDokument } from '../../domain/raum';
 
 export class DrizzleRaumRepository implements RaumRepository {
   async findAllByUserId(userId: string): Promise<Raum[]> {
@@ -28,7 +28,7 @@ export class DrizzleRaumRepository implements RaumRepository {
     laengeCm: number;
     rasterCm: number;
     dokumentVersion: number;
-    canvasDocument: RaumDokumentV1;
+    canvasDocument: RaumDokument;
   }): Promise<Raum> {
     const db = getDb();
     const [row] = await db.insert(raeume).values(data).returning();
@@ -40,7 +40,8 @@ export class DrizzleRaumRepository implements RaumRepository {
     breiteCm?: number;
     laengeCm?: number;
     rasterCm?: number;
-    canvasDocument?: RaumDokumentV1;
+    dokumentVersion?: number;
+    canvasDocument?: RaumDokument;
     updatedAt: Date;
   }): Promise<Raum> {
     const db = getDb();

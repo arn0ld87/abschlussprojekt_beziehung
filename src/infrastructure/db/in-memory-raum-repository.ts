@@ -1,4 +1,4 @@
-import { RaumRepository, Raum, RaumDokumentV1 } from '../../domain/raum';
+import { RaumRepository, Raum, RaumDokument } from '../../domain/raum';
 
 type CreateData = {
   id: string;
@@ -8,7 +8,7 @@ type CreateData = {
   laengeCm: number;
   rasterCm: number;
   dokumentVersion: number;
-  canvasDocument: RaumDokumentV1;
+  canvasDocument: RaumDokument;
 };
 
 export class InMemoryRaumRepository implements RaumRepository {
@@ -40,7 +40,8 @@ export class InMemoryRaumRepository implements RaumRepository {
     breiteCm?: number;
     laengeCm?: number;
     rasterCm?: number;
-    canvasDocument?: RaumDokumentV1;
+    dokumentVersion?: number;
+    canvasDocument?: RaumDokument;
     updatedAt: Date;
   }): Promise<Raum> {
     const existing = this.raeume.get(id);
