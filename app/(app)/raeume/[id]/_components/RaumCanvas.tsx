@@ -1,15 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Stage, Layer, Rect, Line } from 'react-konva';
+import { Stage, Layer, Rect, Line, Circle, Group } from 'react-konva';
 import { berechneMassstab, rasterLinien, cmToPx } from '../../../../../src/domain/raum/koordinaten';
 import type { RaumObjektV1, RaumObjektTyp } from '../../../../../src/domain/raum/objekte';
+import type { SitzplatzV1 } from '../../../../../src/domain/raum/sitzplaetze';
 
 export interface RaumCanvasProps {
   breiteCm: number;
   laengeCm: number;
   rasterCm: number;
   objekte?: RaumObjektV1[];
+  /** Persistierte Sitzplätze (M2 #54) — rein abgeleitet dargestellt */
+  sitzplaetze?: SitzplatzV1[];
   /** ID des aktuell ausgewählten Objekts (M2 #52) */
   ausgewaehltId?: string | null;
   /** Auswahl-Callback — Mausklick/Tap oder Tastatur über die Objektliste */
@@ -38,6 +41,9 @@ const OBJEKT_FARBEN: Record<RaumObjektTyp, { fill: string; stroke: string }> = {
 };
 
 const AUSWAHL_FARBE = '#dc2626';
+// Sitzplatzmarker (M2 #54): visuell klar von den Tischflächen unterscheidbar.
+const SITZPLATZ_FARBEN = { fill: '#f97316', stroke: '#7c2d12' };
+const SITZPLATZ_RADIUS_CM = 10;
 
 // React-Konva-Editorfläche (M2 #50–#52): rendert ausschließlich aus dem
 // validierten Domänenzustand; es werden keine Konva-Nodes, Auswahlrahmen
@@ -49,6 +55,7 @@ export default function RaumCanvas({
   laengeCm,
   rasterCm,
   objekte = [],
+  sitzplaetze = [],
   ausgewaehltId = null,
   onAuswaehlen,
   onBewegt,
@@ -111,39 +118,61 @@ export default function RaumCanvas({
             />
           ))}
           {/* Persistierte Raumobjekte (M2 #51) — abgeleitet aus RaumObjektV1.
-              Rotation erfolgt um den Objektmittelpunkt (Konva offset).
-              Auswahl und Drag-and-drop (M2 #52): die Auswahlmarkierung ist
-              rein visuell; persistiert wird nur die validierte Endposition. */}
+              Jedes Objekt bildet mit seinen Sitzplätzen (M2 #54) eine
+              Konva-Gruppe: Rotation erfolgt um den Objektmittelpunkt
+              (offset), und bei Drag bewegen sich Tisch und Sitzplatzmarker
+              als eine visuelle Einheit — die Marker liegen als Kinder in
+              lokalen Anker-Koordinaten vor. Auswahlmarkierung und
+              Drag-Vorschau sind rein visuell; persistiert wird nur die
+              validierte Endposition. */}
           {objekte.map((o) => {
             const wPx = cmToPx(o.breite_cm, massstab.pxProCm);
             const hPx = cmToPx(o.tiefe_cm, massstab.pxProCm);
             const farben = OBJEKT_FARBEN[o.typ];
             const ausgewaehlt = o.id === ausgewaehltId;
+            const eigeneSitze = sitzplaetze.filter((s) => s.objektId === o.id);
             return (
-              <Rect
+              <Group
                 key={o.id}
                 x={cmToPx(o.x_cm, massstab.pxProCm) + wPx / 2}
                 y={cmToPx(o.y_cm, massstab.pxProCm) + hPx / 2}
-                width={wPx}
-                height={hPx}
                 offsetX={wPx / 2}
                 offsetY={hPx / 2}
                 rotation={o.rotation_deg}
-                fill={farben.fill}
-                stroke={ausgewaehlt ? AUSWAHL_FARBE : farben.stroke}
-                strokeWidth={ausgewaehlt ? 3 : 1.5}
                 draggable={onBewegt !== undefined}
                 onClick={() => onAuswaehlen?.(o.id)}
                 onTap={() => onAuswaehlen?.(o.id)}
                 onDragEnd={(e: DragEndEvent) => {
                   if (!onBewegt) return;
-                  // Node-Position ist der Mittelpunkt (offset) — zurück auf
+                  // Gruppenposition ist der Mittelpunkt (offset) — zurück auf
                   // die linke obere Ecke des unrotierten Rechtecks in cm.
                   const xCm = (e.target.x() - wPx / 2) / massstab.pxProCm;
                   const yCm = (e.target.y() - hPx / 2) / massstab.pxProCm;
                   onBewegt(o.id, xCm, yCm);
                 }}
-              />
+              >
+                <Rect
+                  x={0}
+                  y={0}
+                  width={wPx}
+                  height={hPx}
+                  fill={farben.fill}
+                  stroke={ausgewaehlt ? AUSWAHL_FARBE : farben.stroke}
+                  strokeWidth={ausgewaehlt ? 3 : 1.5}
+                />
+                {eigeneSitze.map((s) => (
+                  <Circle
+                    key={s.id}
+                    x={cmToPx(s.lokalX_cm, massstab.pxProCm)}
+                    y={cmToPx(s.lokalY_cm, massstab.pxProCm)}
+                    radius={cmToPx(SITZPLATZ_RADIUS_CM, massstab.pxProCm)}
+                    fill={SITZPLATZ_FARBEN.fill}
+                    stroke={SITZPLATZ_FARBEN.stroke}
+                    strokeWidth={1.5}
+                    listening={false}
+                  />
+                ))}
+              </Group>
             );
           })}
         </Layer>

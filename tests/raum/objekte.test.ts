@@ -193,13 +193,28 @@ describe('Dokumentversionierung und Migration (ADR-0003, M2 #51)', () => {
     expect(parsed.success).toBe(false);
   });
 
-  it('migriert V1 validiert nach V2 und belässt V2 unverändert', () => {
+  it('migriert V1 und V2 validiert nach V3 und belässt V3 unverändert', () => {
     const migriert = migriereRaumDokument(RaumDokumentSchema.parse(v1Doc));
     expect(migriert.version).toBe(AKTUELLE_DOKUMENT_VERSION);
     expect(migriert.objekte).toEqual([]);
+    expect(migriert.sitzplaetze).toEqual([]);
     expect(migriert.breiteCm).toBe(800);
 
-    const v2 = RaumDokumentV2Schema.parse({ ...v1Doc, version: 2 });
-    expect(migriereRaumDokument(v2)).toEqual(v2);
+    // V2→V3: Tische erhalten deterministisch erzeugte Sitzplätze
+    const v2 = RaumDokumentV2Schema.parse({
+      ...v1Doc,
+      version: 2,
+      objekte: [
+        { id: 'obj_1', typ: 'table_single', x_cm: 100, y_cm: 100, breite_cm: 60, tiefe_cm: 50, rotation_deg: 0 },
+        { id: 'obj_2', typ: 'teacher_desk', x_cm: 300, y_cm: 55, breite_cm: 160, tiefe_cm: 80, rotation_deg: 0 },
+      ],
+    });
+    const migriertV2 = migriereRaumDokument(v2);
+    expect(migriertV2.version).toBe(AKTUELLE_DOKUMENT_VERSION);
+    expect(migriertV2.sitzplaetze).toHaveLength(1); // nur der Einzeltisch
+    expect(migriertV2.sitzplaetze[0].objektId).toBe('obj_1');
+
+    // V3 bleibt unverändert (keine doppelte Sitzplatzerzeugung)
+    expect(migriereRaumDokument(migriertV2)).toEqual(migriertV2);
   });
 });

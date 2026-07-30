@@ -96,8 +96,8 @@ describe('Raeume Routes', () => {
     expect(res.status).toBe(201);
     const data = await res.json();
     expect(data.name).toBe('Raum 1');
-    expect(data.dokumentVersion).toBe(2);
-    expect(data.canvasDocument.version).toBe(2);
+    expect(data.dokumentVersion).toBe(3);
+    expect(data.canvasDocument.version).toBe(3);
     expect(data.canvasDocument.objekte).toEqual([]);
   });
 

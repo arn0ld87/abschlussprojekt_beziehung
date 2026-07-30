@@ -8,6 +8,8 @@ import { MIN_RASTER_CM } from '../../../../../src/domain/raum/koordinaten';
 import { RAUM_OBJEKT_TYPEN, STANDARD_OBJEKTE } from '../../../../../src/domain/raum/objekte';
 import type { RaumObjektTyp, RaumObjektV1 } from '../../../../../src/domain/raum/objekte';
 import { TASTATURKUERZEL, aktionFuerTaste, istEingabefeld } from './tastatur';
+import type { SitzplatzV1 } from '../../../../../src/domain/raum/sitzplaetze';
+import { istTisch } from '../../../../../src/domain/raum/sitzplaetze';
 
 // react-konva braucht den Browser — bewusst ohne SSR geladen (Ladezustand sichtbar).
 const RaumCanvas = dynamic(() => import('./RaumCanvas'), {
@@ -39,6 +41,7 @@ export interface RaumEditorProps {
     rasterCm: number;
     dokumentVersion: number;
     objekte: RaumObjektV1[];
+    sitzplaetze: SitzplatzV1[];
   };
 }
 
@@ -283,6 +286,7 @@ export default function RaumEditor({ raum }: RaumEditorProps) {
           laengeCm={vorschau.laengeCm}
           rasterCm={vorschau.rasterCm}
           objekte={raum.objekte}
+          sitzplaetze={raum.sitzplaetze}
           ausgewaehltId={ausgewaehltId}
           onAuswaehlen={handleAuswaehlen}
           onBewegt={dragAktiv ? handleBewegt : undefined}
@@ -381,6 +385,33 @@ export default function RaumEditor({ raum }: RaumEditorProps) {
               </span>
             ))}
           </p>
+          {/* Zugängliche Sitzplatzliste (M2 #54): Die Konva-Marker selbst
+              sind nicht DOM-zugänglich — Bezeichnung und stabile ID stehen
+              hier als Text zur Verfügung. */}
+          {istTisch(ausgewaehltObjekt.typ) && (
+            <ul
+              aria-label={`Sitzplätze an ${STANDARD_OBJEKTE[ausgewaehltObjekt.typ].label}`}
+              style={{ listStyle: 'none', padding: 0, display: 'flex', gap: '0.5rem', marginTop: '-1rem', marginBottom: '2rem' }}
+            >
+              {raum.sitzplaetze
+                .filter((s) => s.objektId === ausgewaehltObjekt.id)
+                .map((s) => (
+                  <li
+                    key={s.id}
+                    style={{
+                      padding: '0.25rem 0.75rem',
+                      border: '1px solid #7c2d12',
+                      borderRadius: '9999px',
+                      background: '#fff7ed',
+                      color: '#7c2d12',
+                      fontSize: '0.875rem',
+                    }}
+                  >
+                    {s.bezeichnung ?? s.id}
+                  </li>
+                ))}
+            </ul>
+          )}
         </>
       )}
 

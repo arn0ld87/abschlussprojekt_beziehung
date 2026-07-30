@@ -20,11 +20,33 @@ interface RectProps {
 }
 interface StageProps { width: number; height: number; children?: React.ReactNode }
 interface LayerProps { children?: React.ReactNode }
+interface GroupProps {
+  x: number;
+  y: number;
+  rotation?: number;
+  offsetX?: number;
+  offsetY?: number;
+  draggable?: boolean;
+  onClick?: () => void;
+  onTap?: () => void;
+  onDragEnd?: (e: { target: { x(): number; y(): number } }) => void;
+  children?: React.ReactNode;
+}
+interface CircleProps {
+  x: number;
+  y: number;
+  radius: number;
+  fill?: string;
+  stroke?: string;
+  listening?: boolean;
+}
 
 const gerendert = {
   stage: null as StageProps | null,
   rects: [] as RectProps[],
   lines: [] as LineProps[],
+  circles: [] as CircleProps[],
+  groups: [] as GroupProps[],
 };
 
 vi.mock('react-konva', () => ({
@@ -33,6 +55,10 @@ vi.mock('react-konva', () => ({
     return React.createElement('div', { 'data-testid': 'stage' }, props.children);
   },
   Layer: (props: LayerProps) => React.createElement('div', { 'data-testid': 'layer' }, props.children),
+  Group: (props: GroupProps) => {
+    gerendert.groups.push(props);
+    return React.createElement('div', { 'data-testid': 'group' }, props.children);
+  },
   Rect: (props: RectProps) => {
     gerendert.rects.push(props);
     return React.createElement('div', { 'data-testid': 'rect' });
@@ -40,6 +66,10 @@ vi.mock('react-konva', () => ({
   Line: (props: LineProps) => {
     gerendert.lines.push(props);
     return React.createElement('div', { 'data-testid': 'line' });
+  },
+  Circle: (props: CircleProps) => {
+    gerendert.circles.push(props);
+    return React.createElement('div', { 'data-testid': 'circle' });
   },
 }));
 
@@ -51,6 +81,8 @@ describe('RaumCanvas (M2 #50)', () => {
     gerendert.stage = null;
     gerendert.rects = [];
     gerendert.lines = [];
+    gerendert.circles = [];
+    gerendert.groups = [];
   }
 
   it('rendert Raumgrenze und Rasterlinien aus den fachlichen cm-Werten', () => {
@@ -117,7 +149,7 @@ describe('RaumCanvas (M2 #50)', () => {
     expect(gerendert.rects).toHaveLength(7);
   });
 
-  it('rotiert Objekte um ihren Mittelpunkt (Konva offset)', () => {
+  it('rotiert Objekte um ihren Mittelpunkt (Konva-Gruppe mit offset)', () => {
     beforeEachReset();
     const objekte = [
       { id: 'o1', typ: 'teacher_desk', x_cm: 100, y_cm: 100, breite_cm: 160, tiefe_cm: 80, rotation_deg: 90 },
@@ -125,10 +157,11 @@ describe('RaumCanvas (M2 #50)', () => {
     renderToStaticMarkup(
       React.createElement(RaumCanvas, { breiteCm: 800, laengeCm: 600, rasterCm: 50, objekte: [...objekte] }),
     );
-    const objektRect = gerendert.rects[1] as { rotation?: number; offsetX?: number; offsetY?: number; width: number; height: number };
-    expect(objektRect.rotation).toBe(90);
-    expect(objektRect.offsetX).toBeCloseTo(objektRect.width / 2, 6);
-    expect(objektRect.offsetY).toBeCloseTo(objektRect.height / 2, 6);
+    const gruppe = gerendert.groups[0];
+    const objektRect = gerendert.rects[1];
+    expect(gruppe.rotation).toBe(90);
+    expect(gruppe.offsetX).toBeCloseTo(objektRect.width / 2, 6);
+    expect(gruppe.offsetY).toBeCloseTo(objektRect.height / 2, 6);
   });
 
   // --- M2 #52: Auswahl und Drag-and-drop ---
@@ -150,13 +183,14 @@ describe('RaumCanvas (M2 #50)', () => {
         onAuswaehlen: (id: string) => auswahl.push(id),
       }),
     );
-    const tisch = gerendert.rects[1];
-    const doppeltisch = gerendert.rects[2];
+    const tisch = gerendert.groups[0];
+    const tischRect = gerendert.rects[1];
+    const doppeltischRect = gerendert.rects[2];
 
     // Auswahlmarkierung: nur das ausgewählte Objekt ist hervorgehoben
-    expect(doppeltisch.stroke).toBe('#dc2626');
-    expect(doppeltisch.strokeWidth).toBe(3);
-    expect(tisch.stroke).not.toBe('#dc2626');
+    expect(doppeltischRect.stroke).toBe('#dc2626');
+    expect(doppeltischRect.strokeWidth).toBe(3);
+    expect(tischRect.stroke).not.toBe('#dc2626');
 
     // Klick reicht die Objekt-ID nach oben
     tisch.onClick?.();
@@ -178,7 +212,7 @@ describe('RaumCanvas (M2 #50)', () => {
         onBewegt: (id: string, x: number, y: number) => bewegungen.push([id, x, y]),
       }),
     );
-    const tisch = gerendert.rects[1];
+    const tisch = gerendert.groups[0];
     expect(tisch.draggable).toBe(true);
 
     // Fallback-Container 720px → pxProCm = 520/600 (Höhenlimit)
@@ -202,6 +236,62 @@ describe('RaumCanvas (M2 #50)', () => {
     renderToStaticMarkup(
       React.createElement(RaumCanvas, { breiteCm: 800, laengeCm: 600, rasterCm: 50, objekte: [...objekte] }),
     );
-    expect(gerendert.rects[1].draggable).toBe(false);
+    expect(gerendert.groups[0].draggable).toBe(false);
+  });
+
+  // --- M2 #54: Sitzplatzmarker ---
+
+  it('rendert Sitzplätze als unterscheidbare Marker in der Objektgruppe (lokale Anker)', () => {
+    beforeEachReset();
+    const objekte = [
+      { id: 'o1', typ: 'table_single', x_cm: 100, y_cm: 100, breite_cm: 60, tiefe_cm: 50, rotation_deg: 90 },
+    ] as const;
+    const sitzplaetze = [
+      { id: 'o1__sitz_1', objektId: 'o1', lokalX_cm: 30, lokalY_cm: 50, bezeichnung: 'Platz 1' },
+    ] as const;
+    renderToStaticMarkup(
+      React.createElement(RaumCanvas, {
+        breiteCm: 800,
+        laengeCm: 600,
+        rasterCm: 50,
+        objekte: [...objekte],
+        sitzplaetze: [...sitzplaetze],
+      }),
+    );
+
+    expect(gerendert.circles).toHaveLength(1);
+    const marker = gerendert.circles[0];
+    // Lokale Anker-Koordinaten innerhalb der rotierten Gruppe (90°) — die
+    // Gruppentransformation bildet sie auf die Weltposition ab.
+    const pxProCm = 520 / 600;
+    expect(marker.x).toBeCloseTo(30 * pxProCm, 6);
+    expect(marker.y).toBeCloseTo(50 * pxProCm, 6);
+    expect(gerendert.groups[0].rotation).toBe(90);
+    // Visuell unterscheidbar von allen Objektfarben, nicht interaktiv
+    expect(marker.fill).toBe('#f97316');
+    expect(marker.listening).toBe(false);
+  });
+
+  it('überspringt Sitzplätze ohne Parent defensiv und rendert ohne sitzplaetze-Prop keine Marker', () => {
+    beforeEachReset();
+    const objekte = [
+      { id: 'o1', typ: 'table_single', x_cm: 100, y_cm: 100, breite_cm: 60, tiefe_cm: 50, rotation_deg: 0 },
+    ] as const;
+    renderToStaticMarkup(
+      React.createElement(RaumCanvas, {
+        breiteCm: 800,
+        laengeCm: 600,
+        rasterCm: 50,
+        objekte: [...objekte],
+        sitzplaetze: [{ id: 'sx', objektId: 'fehlt', lokalX_cm: 10, lokalY_cm: 10 }],
+      }),
+    );
+    expect(gerendert.circles).toHaveLength(0);
+
+    beforeEachReset();
+    renderToStaticMarkup(
+      React.createElement(RaumCanvas, { breiteCm: 800, laengeCm: 600, rasterCm: 50, objekte: [...objekte] }),
+    );
+    expect(gerendert.circles).toHaveLength(0);
   });
 });
