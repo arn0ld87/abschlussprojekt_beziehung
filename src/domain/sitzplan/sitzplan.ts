@@ -1,13 +1,13 @@
 import { z } from 'zod';
-import { RaumObjektV1Schema } from '../raum/objekte';
-import { SitzplatzV1Schema } from '../raum/sitzplaetze';
+import { RaumGeometrieSchema } from '../raum/raum';
 
 // Versionierter, framework-freier Sitzplan-Vertrag (ADR-0003): keine
 // Konva-Nodes, keine React-Typen. Das Dokument friert die Raumgeometrie der
 // Quellvorlage zum Zeitpunkt der Plananlage ein — spätere Änderungen der
-// Vorlage verändern bestehende Pläne nicht rückwirkend. Objekt- und
-// Sitzplatzvertrag werden aus dem Raummodul wiederverwendet, damit
-// Sitzplatz-IDs über Vorlage und Plan hinweg dieselbe Bedeutung behalten.
+// Vorlage verändern bestehende Pläne nicht rückwirkend. Der Geometrievertrag
+// stammt vollständig aus dem Raummodul (inklusive aller harten Invarianten),
+// damit der eingefrorene Plan keinen schwächeren Parallelvertrag aufmacht,
+// sobald der Editor ab M3 #57/#59 Geometrie zurückschreibt.
 //
 // In diesem Slice (M3 #56) existiert ausschließlich Version 1; eine
 // Migrationsfunktion wird erst mit der zweiten Version fällig.
@@ -17,13 +17,7 @@ export const SitzplanDokumentV1Schema = z.object({
     klasseId: z.string().min(1),
     raumId: z.string().min(1),
   }),
-  raumGeometrie: z.object({
-    breiteCm: z.number().finite().positive(),
-    laengeCm: z.number().finite().positive(),
-    rasterCm: z.number().finite().positive(),
-    objekte: z.array(RaumObjektV1Schema).default([]),
-    sitzplaetze: z.array(SitzplatzV1Schema).default([]),
-  }),
+  raumGeometrie: RaumGeometrieSchema,
   // Reserviert für die Schülerzuordnung (M3 #57); in diesem Slice immer leer.
   zuordnungen: z.array(z.never()).default([]),
 });
