@@ -1,8 +1,8 @@
 # Projektstatus
 
 **Stand:** 31.07.2026<br>
-**Phase:** M0 — Foundation abgeschlossen (29.07.2026, formale Schließung erfolgt); M1 — Klassen abgeschlossen (31.07.2026, formale Schließung erfolgt); M2 — Raumeditor abgeschlossen (31.07.2026, formale Schließung erfolgt); M3 — Persistente Pläne ist die aktuelle Frontier<br>
-**Produktcode:** Auth-Grundlage (M1 #42), Klassenverwaltung (M1 #43), Schülerprofile und Sitzregeln (M1 #44), persistenter Foto-Upload (M1 #45), CSV-Import für Klassenlisten (M1 #46), Raumvorlagen-Grundlage (M2 #49), Raum-Canvas (M2 #50), Standardobjekte mit Möbelpalette (M2 #51), Objektinteraktion mit Rasterfang (M2 #52), Objektaktionen (M2 #53), adressierbare Sitzplätze (M2 #54) und die M2-Akzeptanz (M2 #55) vorhanden
+**Phase:** M0 — Foundation abgeschlossen (29.07.2026, formale Schließung erfolgt); M1 — Klassen abgeschlossen (31.07.2026, formale Schließung erfolgt); M2 — Raumeditor abgeschlossen (31.07.2026, formale Schließung erfolgt); M3 — Persistente Pläne ist die aktuelle Frontier, erster Child-Slice (#56) umgesetzt<br>
+**Produktcode:** Auth-Grundlage (M1 #42), Klassenverwaltung (M1 #43), Schülerprofile und Sitzregeln (M1 #44), persistenter Foto-Upload (M1 #45), CSV-Import für Klassenlisten (M1 #46), Raumvorlagen-Grundlage (M2 #49), Raum-Canvas (M2 #50), Standardobjekte mit Möbelpalette (M2 #51), Objektinteraktion mit Rasterfang (M2 #52), Objektaktionen (M2 #53), adressierbare Sitzplätze (M2 #54), die M2-Akzeptanz (M2 #55) und die Sitzplan-Grundlage (M3 #56) vorhanden
 
 ## Verifiziert vorhanden
 
@@ -29,10 +29,11 @@
 - Objektaktionen: Rotation in 90-Grad-Schritten, Duplizieren mit neuer UUID und rasterversetzter Position, Löschen mit Bestätigung — per Toolbar und Tastaturkürzeln (R/D/Entf), mit Reload-beweisender Aktionsfolge (M2 #53)
 - Adressierbare Sitzplätze an Einzel- und Doppeltischen mit stabilen IDs, lokalem Anker, `RaumDokumentV3` samt validierter Migration, sichtbaren Markern und zugänglicher Liste; Verschieben/Drehen bewahrt IDs, Duplizieren erzeugt disjunkte IDs, Löschen entfernt Sitzplätze atomar (M2 #54)
 - M2-Akzeptanz-Evidenz: PostgreSQL-Integrationstest über den vollständigen Akzeptanzpfad (Anlegen → Maße/Raster → alle sechs Objekte → Verschieben/Drehen/Duplizieren/Löschen → Sitzplätze → Reload identisch), JSONB-Konva-Freiheits- und Versionsvertrag, Ownership-Nachweis, Accessibility-Vertragstest (statisches Markup + Quell-Vertrag) und visueller Referenzzustand (M2 #55)
+- Sitzplan-Grundlage: Tabelle `sitzplaene` mit Migration `0006_sitzplaene.sql`, versionierter und Konva-freier Zod-Vertrag `SitzplanDokumentV1` (eingefrorene Raumgeometrie samt stabiler Sitzplatz-IDs, Quellmetadaten, leere Zuordnung), framework-freier `SitzplanService` mit delegierter Ownership-Prüfung für Klasse und Raumvorlage, Route Handler unter `/api/sitzplaene` sowie UI `/sitzplaene`, `/sitzplaene/neu` und Editor-Shell `/sitzplaene/[id]`; Snapshot-Isolation ist gegen Test-PostgreSQL nachgewiesen (M3 #56)
 
 ## Noch nicht vorhanden
 
-- Sitzplan-Editor
+- Sitzplan-Editorfläche mit Schülerzuordnung, Autosave, Planversionen und Restore
 - Release-Artefakt
 
 ## M0-Abschluss
@@ -83,7 +84,7 @@ Der GitHub-Milestone `M2 — Raumeditor` wurde am 31.07.2026 formal geschlossen.
 
 ## Nächster Freigabepunkt
 
-M1 und M2 sind vollständig abgeschlossen (alle Child-Slices, Akzeptanzpfade, Parent-Issues und Milestones). Damit ist [M3 — Persistente Pläne](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) (Autosave, Versionen und Restore mit neuer Revision je Restore, siehe `docs/superpowers/specs/2026-07-29-m2-m3-ticketing-design.md`) die aktuelle Frontier. Der nächste Freigabepunkt ist die Definition und Freigabe des ersten M3-Child-Slices mit Label `ready-for-agent` durch den Lead.
+M1 und M2 sind vollständig abgeschlossen (alle Child-Slices, Akzeptanzpfade, Parent-Issues und Milestones). Damit ist [M3 — Persistente Pläne](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) (Autosave, Versionen und Restore mit neuer Revision je Restore, siehe `docs/superpowers/specs/2026-07-29-m2-m3-ticketing-design.md`) die aktuelle Frontier. Der erste M3-Child-Slice [#56](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/56) (Sitzplan-Grundlage) ist umgesetzt: Klasse und Raumvorlage werden zu einem persistenten Plan mit eingefrorener Raumgeometrie verbunden. Der nächste Freigabepunkt ist die Freigabe des folgenden M3-Child-Slices mit Label `ready-for-agent` durch den Lead.
 
 ## Milestone-Frontier
 
@@ -92,7 +93,7 @@ M1 und M2 sind vollständig abgeschlossen (alle Child-Slices, Akzeptanzpfade, Pa
 | M0 | [#2 Foundation: Repository und Agentenworkflow](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/2) | abgeschlossen (29.07.2026, Milestone und Issues formal geschlossen) |
 | M1 | [#3 Klassen: Auth, Klassen und Schülerprofile](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/3) | abgeschlossen (31.07.2026, Milestone und Issues formal geschlossen) |
 | M2 | [#4 Raumeditor: Maße, Möbel und Sitzplätze](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/4) | abgeschlossen (31.07.2026, Milestone und Issues formal geschlossen) |
-| M3 | [#5 Persistente Pläne: Autosave, Versionen und Restore](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) | aktuelle Frontier — noch kein Child-Issue mit `ready-for-agent` freigegeben |
+| M3 | [#5 Persistente Pläne: Autosave, Versionen und Restore](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/5) | aktuelle Frontier — Child-Issue [#56](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/56) (Sitzplan-Grundlage) umgesetzt |
 | M4 | [#6 Optimierer: Regeln, Konflikte und reproduzierbare Vorschläge](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/6) | blockiert durch M3 |
 | M5 | [#7 KI-Assistent: BYOK, Chat und validierte Commands](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/7) | blockiert durch M4 |
 | M6 | [#8 Ausgabe und PWA: Entwürfe, PDF, PNG und Import/Export](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/8) | blockiert durch M3 |
