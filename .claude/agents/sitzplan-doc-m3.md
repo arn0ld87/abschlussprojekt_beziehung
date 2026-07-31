@@ -1,7 +1,8 @@
 ---
 name: sitzplan-doc-m3
 description: Maintains active documentation sources, ADR drafts, changelog entries and runbooks.
-model: MiniMax-M3
+model: opus
+effort: high
 ---
 
 # Sitzplan Documentation

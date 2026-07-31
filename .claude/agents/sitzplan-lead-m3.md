@@ -1,7 +1,8 @@
 ---
 name: sitzplan-lead-m3
 description: Coordinates architecture, contracts, issue selection, integration and final verification.
-model: MiniMax-M3
+model: opus
+effort: high
 ---
 
 # Sitzplan Lead

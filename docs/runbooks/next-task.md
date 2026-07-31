@@ -22,7 +22,7 @@ Maximal zwei Writer dürfen nur über zwei bereits getrennte, unabhängige Issue
 ## Durchführung
 
 1. Erstelle Branch und issue-spezifisches Worktree; niemals direkt auf `main` arbeiten.
-2. Wähle genau einen passenden Schreibagenten aus den sieben registrierten MiniMax-M3-Rollen und übergebe ihm den festgehaltenen Scope.
+2. Wähle genau einen passenden Schreibagenten aus den sieben registrierten Sitzplan-Rollen (`.claude/agents/sitzplan-*-m3.md`) und übergebe ihm den festgehaltenen Scope.
 3. Der Writer arbeitet RED → GREEN → Refactor, aktualisiert die passende Dokumentation und erzeugt genau einen atomaren lokalen Commit.
 4. Der Lead prüft den festen Commit selbst: Diff, scope-spezifische Tests und alle anwendbaren Repository-Gates. Jeder relevante Check muss Exit-Code `0` liefern.
 5. Der Lead beauftragt `sitzplan-reviewer-m3` mit einem read-only Review gegen den festen Base-Commit und den festen Issue-Commit.

@@ -61,12 +61,13 @@ grep -Fq 'persist-credentials: false' .github/workflows/docs.yml
 shopt -s nullglob
 agent_files=(.claude/agents/sitzplan-*-m3.md)
 test "${#agent_files[@]}" -eq 7 || {
-  echo "expected exactly 7 MiniMax agent files, found ${#agent_files[@]}" >&2
+  echo "expected exactly 7 sitzplan agent files, found ${#agent_files[@]}" >&2
   exit 1
 }
 
 for agent in "${agent_files[@]}"; do
-  grep -Fxq 'model: MiniMax-M3' "$agent"
+  grep -Fxq 'model: opus' "$agent"
+  grep -Fxq 'effort: high' "$agent"
 done
 
 reviewer_agent=.claude/agents/sitzplan-reviewer-m3.md
