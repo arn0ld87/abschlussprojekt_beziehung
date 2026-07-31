@@ -4,6 +4,10 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 
 ## Unreleased
 
+### Added
+
+- Sitzplan-Grundlage (M3 #56): Drizzle-Tabelle `sitzplaene` mit Migration `0006_sitzplaene.sql` (`user_id`, `klasse_id`, `raum_id`, `name`, `revision`, `dokument_version`, `canvas_document` als JSONB, Soft-Delete via `deleted_at`), versionierter und Konva-freier Zod-Vertrag `SitzplanDokumentV1` mit eingefrorener Raumgeometrie inklusive stabiler Sitzplatz-IDs, Quellmetadaten zu Klasse und Raumvorlage sowie noch leerer Schülerzuordnung (ADR-0003), framework-freier `SitzplanService` und Repository-Port — Existenz, Eigentümerschaft und Soft-Delete-Zustand beider Quellen werden an `KlassenService` und `RaumService` delegiert statt dupliziert, Route Handler `GET`/`POST /api/sitzplaene` und `GET`/`PATCH`/`DELETE /api/sitzplaene/[id]` (Soft-Delete) sowie UI `/sitzplaene`, `/sitzplaene/neu` mit Auswahl der eigenen Klasse und Raumvorlage und Editor-Shell `/sitzplaene/[id]` mit Umbenennen und Löschen; `revision` startet bei `1` und wird in diesem Slice bewusst nicht fortgeschrieben (Autosave folgt, ADR-0004); PostgreSQL-Integrationstest (`tests/sitzplan/sitzplan-postgres.integration.test.ts`, opt-in via `TEST_DATABASE_URL`) weist die Snapshot-Isolation nach: eine nach der Plananlage geänderte Raumvorlage verändert den Plan nicht rückwirkend
+
 ## M2 — Raumeditor — 30.07.2026
 
 **Betroffene Bereiche:** Raumvorlagen mit versioniertem JSONB-Dokument, Konva-Editorfläche, Standardobjekte und Möbelpalette, Objektinteraktion mit Rasterfang, Objektaktionen, adressierbare Sitzplätze, M2-Akzeptanz.
