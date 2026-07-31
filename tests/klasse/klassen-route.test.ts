@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET as getList, POST as create } from '../../app/api/klassen/route';
 import { GET as getDetail, PATCH as update, DELETE as remove } from '../../app/api/klassen/[id]/route';
@@ -64,6 +64,19 @@ describe('Klassen Routes', () => {
     const data = await res.json();
     expect(data).toHaveLength(1);
     expect(data[0].name).toBe('K1');
+  });
+
+  it('GET /api/klassen 500 error path', async () => {
+    await setSession(mockUser);
+    const service = getDefaultKlassenService();
+    const listSpy = vi.spyOn(service, 'list').mockRejectedValueOnce(new Error('Test error'));
+
+    const res = await getList(req('GET'));
+    expect(res.status).toBe(500);
+    const data = await res.json();
+    expect(data.code).toBe('INTERNAL_ERROR');
+
+    listSpy.mockRestore();
   });
 
   it('POST /api/klassen 401 unauth', async () => {

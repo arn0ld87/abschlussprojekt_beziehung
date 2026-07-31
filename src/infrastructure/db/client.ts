@@ -8,13 +8,11 @@ let dbInstance: NodePgDatabase<typeof schema> | null = null;
 export function getDb(connectionString?: string): NodePgDatabase<typeof schema> {
   if (dbInstance) return dbInstance;
 
-  const url = connectionString ?? process.env.DATABASE_URL;
+  const targetUrl = connectionString ?? process.env.DATABASE_URL;
 
-  if (!url && process.env.NODE_ENV === "production") {
-    throw new Error("DATABASE_URL is required in production environment.");
+  if (!targetUrl) {
+    throw new Error("DATABASE_URL is required.");
   }
-
-  const targetUrl = url ?? "postgres://postgres:changeme@localhost:5432/sitzplan";
 
   pool = new Pool({
     connectionString: targetUrl,

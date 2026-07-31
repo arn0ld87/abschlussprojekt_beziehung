@@ -22,14 +22,24 @@ describe("docs/STATUS.md reflects the M0 #27 foundation baseline", () => {
     expect(notYetSection).not.toContain("Datenbankschema und Migrationen");
   });
 
-  it("still lists the remaining M1 work and release artifact as not yet present", () => {
+  it("still lists the remaining editor work and release artifact as not yet present", () => {
+    expect(notYetSection).toContain("Sitzplan-Editor");
     expect(notYetSection).toContain("Release-Artefakt");
     expect(notYetSection).not.toContain("Docker-Laufzeit");
   });
 
-  it("keeps exactly three remaining 'Noch nicht vorhanden' bullets", () => {
+  it("keeps exactly two remaining 'Noch nicht vorhanden' bullets after M2 #55", () => {
     const bullets = notYetSection.split("\n").filter((line) => line.trim().startsWith("-"));
-    expect(bullets).toHaveLength(3);
+    expect(bullets).toHaveLength(2);
+    // M2 ist abgeschlossen — Raumvorlagen sind nicht mehr offen
+    expect(notYetSection).not.toContain("Raumvorlagen");
+  });
+
+  it("no longer lists M1 #44–#46 features as missing", () => {
+    expect(notYetSection).not.toContain("Schülerprofile");
+    expect(notYetSection).not.toContain("Sitzregeln");
+    expect(notYetSection).not.toContain("Foto-Upload");
+    expect(notYetSection).not.toContain("CSV-Import");
   });
 });
 

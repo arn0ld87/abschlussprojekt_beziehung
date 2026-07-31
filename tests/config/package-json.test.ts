@@ -52,16 +52,23 @@ describe("package.json contract (M0 #27 foundation baseline)", () => {
     expect(pkg.dependencies["react-dom"]).toBe("^19.0.0");
   });
 
-  it("declares next, react, react-dom, pg, drizzle-orm, better-auth, and zod as runtime dependencies", () => {
+  it("declares next, react, react-dom, pg, drizzle-orm, better-auth, zod, konva and react-konva as runtime dependencies", () => {
     expect(Object.keys(pkg.dependencies).sort()).toEqual([
       "better-auth",
       "drizzle-orm",
+      "konva",
       "next",
       "pg",
       "react",
       "react-dom",
+      "react-konva",
       "zod",
     ]);
+  });
+
+  it("adds react-konva and konva for the M2 room editor canvas (ADR-0002)", () => {
+    expect(pkg.dependencies["react-konva"]).toBeDefined();
+    expect(pkg.dependencies.konva).toBeDefined();
   });
 
   it("adds pg as a runtime dependency for the M0 #20 healthcheck probe", () => {

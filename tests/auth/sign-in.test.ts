@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { POST as signUp } from "../../app/api/auth/sign-up/route";
 import { POST as signIn } from "../../app/api/auth/sign-in/route";
 import { AuthService } from "../../src/services/auth/auth-service";
@@ -89,5 +89,26 @@ describe("POST /api/auth/sign-in (M1 #42)", () => {
 
     const json = await res.json();
     expect(json.code ?? json.error?.code).toBe("INVALID_CREDENTIALS");
+  });
+
+  it("returns 500 with INTERNAL_ERROR on unexpected error", async () => {
+    const authService = new AuthService(new InMemoryAuthRepository());
+    vi.spyOn(authService, "signIn").mockRejectedValue(new Error("Generic DB failure"));
+    setGlobalAuthService(authService);
+
+    const req = new Request("http://localhost:3000/api/auth/sign-in", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: "any@school.de",
+        password: "anyPassword123!",
+      }),
+    });
+
+    const res = await signIn(req);
+    expect(res.status).toBe(500);
+
+    const json = await res.json();
+    expect(json.code).toBe("INTERNAL_ERROR");
   });
 });

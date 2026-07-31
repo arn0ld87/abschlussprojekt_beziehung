@@ -1,4 +1,6 @@
-import { doublePrecision, index, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { doublePrecision, index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import type { RaumDokument } from "../../domain/raum";
+import type { SitzplanDokumentV1 } from "../../domain/sitzplan";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -132,3 +134,35 @@ export const fotos = pgTable("fotos", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
+
+export const raeume = pgTable("raeume", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  breiteCm: doublePrecision("breite_cm").notNull(),
+  laengeCm: doublePrecision("laenge_cm").notNull(),
+  rasterCm: doublePrecision("raster_cm").notNull(),
+  dokumentVersion: integer("dokument_version").notNull().default(1),
+  canvasDocument: jsonb("canvas_document").$type<RaumDokument>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (table) => ({
+  userIdIdx: index("raeume_user_id_idx").on(table.userId),
+}));
+
+export const sitzplaene = pgTable("sitzplaene", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  klasseId: text("klasse_id").notNull().references(() => klassen.id, { onDelete: "cascade" }),
+  raumId: text("raum_id").notNull().references(() => raeume.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  revision: integer("revision").notNull().default(1),
+  dokumentVersion: integer("dokument_version").notNull().default(1),
+  canvasDocument: jsonb("canvas_document").$type<SitzplanDokumentV1>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+}, (table) => ({
+  userIdIdx: index("sitzplaene_user_id_idx").on(table.userId),
+}));
