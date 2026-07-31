@@ -329,7 +329,7 @@ export default function RaumEditor({ raum }: RaumEditorProps) {
                 <Button
                   type="button"
                   variant={o.id === ausgewaehltId ? 'primary' : 'ghost'}
-                  aria-pressed={o.id === ausgewaehltId}
+                  ariaPressed={o.id === ausgewaehltId}
                   onClick={() => setAusgewaehltId(o.id)}
                 >
                   {STANDARD_OBJEKTE[o.typ].label} ({Math.round(o.x_cm)}, {Math.round(o.y_cm)})

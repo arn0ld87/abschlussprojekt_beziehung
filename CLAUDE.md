@@ -45,6 +45,20 @@
 - Architektur, Security, Migrationen, mehrdeutige Spezifikationen und modulübergreifende Verträge bleiben Lead-Entscheidungen.
 - Worker-Zusammenfassungen sind Navigationshilfen, keine Evidenz; der Lead prüft Diff, Graph-Auswirkung und Gates selbst.
 
+## Agent skills
+
+### Issue tracker
+
+Issues liegen in GitHub Issues von `arn0ld87/abschlussprojekt_beziehung` (`gh` CLI). Siehe [`docs/agents/issue-tracker.md`](docs/agents/issue-tracker.md).
+
+### Triage labels
+
+Die fünf kanonischen Rollen-Labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), bereits im Repo angelegt. Siehe [`docs/agents/triage-labels.md`](docs/agents/triage-labels.md).
+
+### Domain docs
+
+Single-context: `CONTEXT.md` als lebender Stand, ADRs in `docs/decisions/`. Siehe [`docs/agents/domain.md`](docs/agents/domain.md).
+
 ## Nicht aufnehmen
 
 - Keine Kopie von `docs/product.md`, keine Dateiliste, keine einmaligen Statusmeldungen und keine Regeln, die Tooling bereits erzwingt.
