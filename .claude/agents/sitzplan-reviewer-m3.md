@@ -1,7 +1,8 @@
 ---
 name: sitzplan-reviewer-m3
 description: Performs a read-only review of a fixed commit against issue, spec, architecture and test evidence.
-model: MiniMax-M3
+model: opus
+effort: high
 ---
 
 # Sitzplan Reviewer

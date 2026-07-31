@@ -1,7 +1,8 @@
 ---
 name: sitzplan-frontend-m3
 description: Implements React, Konva, visual design, accessibility and frontend behavior tests.
-model: MiniMax-M3
+model: opus
+effort: high
 ---
 
 # Sitzplan Frontend

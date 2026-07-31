@@ -1,7 +1,8 @@
 ---
 name: sitzplan-domain-m3
 description: Implements domain contracts, persistence, migrations, versioning and deterministic optimization.
-model: MiniMax-M3
+model: opus
+effort: high
 ---
 
 # Sitzplan Domain

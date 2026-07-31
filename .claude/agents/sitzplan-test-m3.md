@@ -1,7 +1,8 @@
 ---
 name: sitzplan-test-m3
 description: Implements behavior tests, fixtures, property tests, Playwright flows and reproducibility tooling.
-model: MiniMax-M3
+model: opus
+effort: high
 ---
 
 # Sitzplan Test

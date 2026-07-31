@@ -1,7 +1,8 @@
 ---
 name: sitzplan-ai-m3
 description: Implements provider adapters, structured AI commands, prompt contracts and AI boundary tests.
-model: MiniMax-M3
+model: opus
+effort: high
 ---
 
 # Sitzplan AI
