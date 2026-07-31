@@ -31,7 +31,7 @@ export class InMemorySitzplanRepository implements SitzplanRepository {
 
   async update(id: string, data: SitzplanUpdateData): Promise<Sitzplan> {
     const existing = this.sitzplaene.get(id);
-    if (!existing) throw new Error('Not found');
+    if (!existing || existing.deletedAt) throw new Error('Not found');
 
     const updated: Sitzplan = {
       ...existing,

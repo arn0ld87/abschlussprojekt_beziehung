@@ -105,7 +105,10 @@ describe('Sitzplaene Routes (M3 #56)', () => {
 
     const res = await getList(req('GET'));
     expect(res.status).toBe(500);
-    expect((await res.json()).code).toBe('INTERNAL_ERROR');
+    const data = await res.json();
+    expect(data.code).toBe('INTERNAL_ERROR');
+    expect(data.error?.code).toBe('INTERNAL_ERROR');
+    expect(data.error?.message).toBe('Ein unerwarteter Fehler ist aufgetreten.');
 
     listSpy.mockRestore();
   });
