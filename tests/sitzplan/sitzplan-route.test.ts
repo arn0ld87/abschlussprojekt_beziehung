@@ -3,23 +3,28 @@ import { NextRequest } from 'next/server';
 import { GET as getList, POST as create } from '../../app/api/sitzplaene/route';
 import { GET as getDetail, PATCH as update, DELETE as remove } from '../../app/api/sitzplaene/[id]/route';
 import { setGlobalSitzplanService, getDefaultSitzplanService } from '../../src/services/sitzplan';
+import { PUT as setzeZuordnungen } from '../../app/api/sitzplaene/[id]/zuordnungen/route';
 import { setGlobalKlassenService } from '../../src/services/klasse';
 import { setGlobalRaumService } from '../../src/services/raum';
+import { setGlobalSchuelerService } from '../../src/services/schueler';
 import { setGlobalAuthService } from '../../src/services/auth';
 import { AuthService } from '../../src/services/auth/auth-service';
 import { InMemoryAuthRepository } from '../../src/infrastructure/auth/in-memory-repository';
 import { KlassenService } from '../../src/domain/klasse';
 import { RaumService } from '../../src/domain/raum';
+import { SchuelerService } from '../../src/domain/schueler';
 import { SitzplanService } from '../../src/domain/sitzplan';
 import { InMemoryKlassenRepository } from '../../src/infrastructure/db/in-memory-klassen-repository';
 import { InMemoryRaumRepository } from '../../src/infrastructure/db/in-memory-raum-repository';
+import { InMemorySchuelerRepository } from '../../src/infrastructure/db/in-memory-schueler-repository';
 import { InMemorySitzplanRepository } from '../../src/infrastructure/db/in-memory-sitzplan-repository';
 import { User } from '../../src/domain/auth';
 
-describe('Sitzplaene Routes (M3 #56)', () => {
+describe('Sitzplaene Routes (M3 #56, #57)', () => {
   let authRepo: InMemoryAuthRepository;
   let klassenService: KlassenService;
   let raumService: RaumService;
+  let schuelerService: SchuelerService;
   let currentSessionToken = '';
 
   beforeEach(async () => {
@@ -29,7 +34,11 @@ describe('Sitzplaene Routes (M3 #56)', () => {
     raumService = new RaumService(new InMemoryRaumRepository());
     setGlobalKlassenService(klassenService);
     setGlobalRaumService(raumService);
-    setGlobalSitzplanService(new SitzplanService(new InMemorySitzplanRepository(), klassenService, raumService));
+    schuelerService = new SchuelerService(new InMemorySchuelerRepository(), klassenService);
+    setGlobalSchuelerService(schuelerService);
+    setGlobalSitzplanService(
+      new SitzplanService(new InMemorySitzplanRepository(), klassenService, raumService, schuelerService),
+    );
 
     authRepo = new InMemoryAuthRepository();
     setGlobalAuthService(new AuthService(authRepo));
@@ -256,5 +265,97 @@ describe('Sitzplaene Routes (M3 #56)', () => {
     await setSession(mockUser);
     const res = await remove(req('DELETE'), { params: Promise.resolve({ id: 'plan_missing' }) });
     expect(res.status).toBe(404);
+  });
+
+  describe('PUT /api/sitzplaene/[id]/zuordnungen (M3 #57)', () => {
+    async function planMitSchuelern(userId = 'u1') {
+      const { klasseId, raumId } = await quellen(userId);
+      const plan = await getDefaultSitzplanService().create(userId, { name: 'Fantasieplan', klasseId, raumId });
+      const anna = await schuelerService.create(userId, klasseId, { name: 'Anna Fantasie' });
+      const platz = plan.canvasDocument.raumGeometrie.sitzplaetze[0].id;
+      return { klasseId, plan, anna, platz };
+    }
+
+    it('401 ohne Anmeldung', async () => {
+      await setSession(null);
+      const res = await setzeZuordnungen(req('PUT', { zuordnungen: [] }), {
+        params: Promise.resolve({ id: 'any' }),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('200 schreibt die Zuordnung und liefert das validierte Dokument zurück', async () => {
+      await setSession(mockUser);
+      const { plan, anna, platz } = await planMitSchuelern('u1');
+
+      const res = await setzeZuordnungen(
+        req('PUT', { zuordnungen: [{ sitzplatzId: platz, schuelerId: anna.id }] }),
+        { params: Promise.resolve({ id: plan.id }) },
+      );
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.canvasDocument.zuordnungen).toEqual([{ sitzplatzId: platz, schuelerId: anna.id }]);
+      expect(data.canvasDocument.raumGeometrie.sitzplaetze).toHaveLength(1);
+      expect(data.revision).toBe(1);
+    });
+
+    it('422 für unbekannte Sitzplätze und für Schüler fremder Klassen', async () => {
+      await setSession(mockUser);
+      const { plan, anna, platz } = await planMitSchuelern('u1');
+      const fremd = await planMitSchuelern('other');
+
+      const unbekannterPlatz = await setzeZuordnungen(
+        req('PUT', { zuordnungen: [{ sitzplatzId: 'obj_weg__sitz_1', schuelerId: anna.id }] }),
+        { params: Promise.resolve({ id: plan.id }) },
+      );
+      expect(unbekannterPlatz.status).toBe(422);
+
+      const fremderSchueler = await setzeZuordnungen(
+        req('PUT', { zuordnungen: [{ sitzplatzId: platz, schuelerId: fremd.anna.id }] }),
+        { params: Promise.resolve({ id: plan.id }) },
+      );
+      expect(fremderSchueler.status).toBe(422);
+      expect((await fremderSchueler.json()).error?.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('422 für ein fehlerhaftes Eingabeformat', async () => {
+      await setSession(mockUser);
+      const { plan } = await planMitSchuelern('u1');
+      const res = await setzeZuordnungen(req('PUT', { zuordnungen: 'keine Liste' }), {
+        params: Promise.resolve({ id: plan.id }),
+      });
+      expect(res.status).toBe(422);
+    });
+
+    it('403 für fremde Pläne und 404 für unbekannte Pläne', async () => {
+      await setSession(mockUser);
+      const fremd = await planMitSchuelern('other');
+
+      const fremdRes = await setzeZuordnungen(req('PUT', { zuordnungen: [] }), {
+        params: Promise.resolve({ id: fremd.plan.id }),
+      });
+      expect(fremdRes.status).toBe(403);
+
+      const unbekannt = await setzeZuordnungen(req('PUT', { zuordnungen: [] }), {
+        params: Promise.resolve({ id: 'plan_missing' }),
+      });
+      expect(unbekannt.status).toBe(404);
+    });
+
+    it('500 im unerwarteten Fehlerfall', async () => {
+      await setSession(mockUser);
+      const { plan } = await planMitSchuelern('u1');
+      const service = getDefaultSitzplanService();
+      const spy = vi.spyOn(service, 'setzeZuordnungen').mockRejectedValueOnce(new Error('Test error'));
+
+      const res = await setzeZuordnungen(req('PUT', { zuordnungen: [] }), {
+        params: Promise.resolve({ id: plan.id }),
+      });
+      expect(res.status).toBe(500);
+      expect((await res.json()).code).toBe('INTERNAL_ERROR');
+
+      spy.mockRestore();
+    });
   });
 });

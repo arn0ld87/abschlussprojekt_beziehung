@@ -3,6 +3,7 @@ import { DrizzleSitzplanRepository } from '../../infrastructure/db/sitzplan-repo
 import { InMemorySitzplanRepository } from '../../infrastructure/db/in-memory-sitzplan-repository';
 import { getDefaultKlassenService } from '../klasse';
 import { getDefaultRaumService } from '../raum';
+import { getDefaultSchuelerService } from '../schueler';
 
 let globalService: SitzplanService | null = null;
 let testDefaultService: SitzplanService | null = null;
@@ -24,6 +25,7 @@ export function getDefaultSitzplanService(): SitzplanService {
         new InMemorySitzplanRepository(),
         getDefaultKlassenService(),
         getDefaultRaumService(),
+        getDefaultSchuelerService(),
       );
     }
     return testDefaultService;
@@ -33,5 +35,6 @@ export function getDefaultSitzplanService(): SitzplanService {
     new DrizzleSitzplanRepository(),
     getDefaultKlassenService(),
     getDefaultRaumService(),
+    getDefaultSchuelerService(),
   );
 }

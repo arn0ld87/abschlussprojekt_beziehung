@@ -8,6 +8,7 @@ import { getDefaultRaumService } from '../../../../src/services/raum';
 import Link from 'next/link';
 import Container from '../../../../src/ui/Container';
 import SitzplanVerwaltung from './_components/SitzplanVerwaltung';
+import SitzplanZuordnung from './_components/SitzplanZuordnung';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,9 +26,12 @@ export default async function SitzplanDetailPage({ params }: { params: Promise<{
   if (!user) redirect('/signin');
 
   const service = getDefaultSitzplanService();
-  let sitzplan;
+  // Die Ansicht liefert Plan, abgeleitete Ablage, Belegung und
+  // Inkonsistenzbefunde in einem Zug (M3 #57). Ein Befund verhindert das
+  // Laden nie — er wird neben dem Plan angezeigt.
+  let ansicht;
   try {
-    sitzplan = await service.getById(user.id, (await params).id);
+    ansicht = await service.ansicht(user.id, (await params).id);
   } catch (err) {
     if (err instanceof SitzplanError) {
       return (
@@ -40,6 +44,7 @@ export default async function SitzplanDetailPage({ params }: { params: Promise<{
     throw err;
   }
 
+  const { sitzplan } = ansicht;
   const dokument = sitzplan.canvasDocument;
   const geometrie = dokument.raumGeometrie;
 
@@ -77,7 +82,9 @@ export default async function SitzplanDetailPage({ params }: { params: Promise<{
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <dt>Sitzplätze:</dt>
-          <dd style={{ margin: 0 }}>{geometrie.sitzplaetze.length}</dd>
+          <dd style={{ margin: 0 }}>
+            {geometrie.sitzplaetze.length} · {dokument.zuordnungen.length} belegt
+          </dd>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <dt>Revision:</dt>
@@ -93,6 +100,21 @@ export default async function SitzplanDetailPage({ params }: { params: Promise<{
         Die Geometrie dieses Plans ist beim Anlegen eingefroren worden. Änderungen an der Raumvorlage
         wirken sich nicht rückwirkend auf diesen Sitzplan aus.
       </p>
+
+      <hr style={{ margin: '2rem 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
+
+      <SitzplanZuordnung
+        sitzplanId={sitzplan.id}
+        geometrie={geometrie}
+        schueler={[...ansicht.ablage, ...ansicht.belegung.map((b) => b.schueler)].map((s) => ({
+          id: s.id,
+          name: s.name,
+          initialen: s.initialen,
+          farbe: s.farbe,
+        }))}
+        zuordnungen={dokument.zuordnungen}
+        befunde={ansicht.befunde}
+      />
 
       <hr style={{ margin: '2rem 0', border: 'none', borderTop: '1px solid #e5e7eb' }} />
 

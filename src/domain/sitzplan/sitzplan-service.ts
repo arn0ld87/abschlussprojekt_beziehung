@@ -1,15 +1,18 @@
 import { randomUUID } from 'node:crypto';
 import { KlasseError, KlassenService } from '../klasse';
 import { RaumDokumentV3, RaumError, RaumService, migriereRaumDokument } from '../raum';
+import { Schueler, SchuelerService } from '../schueler';
 import {
   AKTUELLE_SITZPLAN_DOKUMENT_VERSION,
   CreateSitzplanInputSchema,
+  SetzeZuordnungenInputSchema,
   Sitzplan,
   SitzplanDokumentV1,
   SitzplanDokumentV1Schema,
   UpdateSitzplanInputSchema,
 } from './sitzplan';
 import { SitzplanRepository } from './sitzplan-repository-port';
+import { ZuordnungBefund, ermittleBefunde, sortiereZuordnungen } from './zuordnung-commands';
 
 export type SitzplanErrorCode = 'NOT_FOUND' | 'FORBIDDEN' | 'VALIDATION_ERROR';
 
@@ -34,11 +37,26 @@ function quellenFehler(code: string, quelle: 'Klasse' | 'Raumvorlage'): Sitzplan
   return new SitzplanError('NOT_FOUND', `Die angegebene ${quelle} existiert nicht oder wurde gelöscht.`);
 }
 
+/**
+ * Ladeansicht des Editors (M3 #57). Ablage und Belegung sind abgeleitet, nicht
+ * persistiert: Sie entstehen aus dem aktiven Klassenbestand und den
+ * Zuordnungen des Plandokuments. `befunde` meldet Zuordnungen auf inzwischen
+ * nicht mehr aktive Schülerprofile — als Diagnose neben dem Plan, nicht als
+ * Ladefehler.
+ */
+export interface SitzplanAnsicht {
+  sitzplan: Sitzplan;
+  ablage: Schueler[];
+  belegung: Array<{ sitzplatzId: string; schueler: Schueler }>;
+  befunde: ZuordnungBefund[];
+}
+
 export class SitzplanService {
   constructor(
     private readonly repository: SitzplanRepository,
     private readonly klassenService: KlassenService,
     private readonly raumService: RaumService,
+    private readonly schuelerService: SchuelerService,
   ) {}
 
   async list(userId: string): Promise<Sitzplan[]> {
@@ -114,6 +132,107 @@ export class SitzplanService {
     return this.repository.update(sitzplanId, {
       name: parsed.data.name,
       updatedAt: new Date(),
+    });
+  }
+
+  /**
+   * Schreibt die Schülerzuordnung als vollständiges, erneut validiertes
+   * Plandokument (M3 #57). Der Client sendet ausschließlich die Zuordnungen;
+   * Geometrie und Quelle bleiben eingefroren.
+   *
+   * Serverseitig erzwungen — die Bedienoberfläche ist kein Schutzmechanismus:
+   * Eigentümerschaft am Plan, Klassenzugehörigkeit jedes Schülerprofils und
+   * dessen Soft-Delete-Zustand. Die drei harten Zuordnungs-Invarianten
+   * (bekannter Sitzplatz, höchstens ein Schüler je Platz, höchstens ein Platz
+   * je Schüler) prüft der Zod-Vertrag.
+   *
+   * Ohne Debounce-Autosave und ohne Revisionsfortschreibung — beides gehört
+   * zu M3 #59 (ADR-0004).
+   */
+  async setzeZuordnungen(userId: string, sitzplanId: string, input: unknown): Promise<Sitzplan> {
+    const parsed = SetzeZuordnungenInputSchema.safeParse(input);
+    if (!parsed.success) {
+      throw new SitzplanError('VALIDATION_ERROR', parsed.error.errors[0].message);
+    }
+
+    const sitzplan = await this.getById(userId, sitzplanId); // Checks existence & ownership
+
+    // Klassenzugehörigkeit und Soft-Delete: `list` liefert ausschließlich
+    // aktive Schülerprofile genau dieser Klasse und prüft dabei zugleich die
+    // Eigentümerschaft an der Klasse. Ist die Quellklasse selbst gelöscht,
+    // bleibt der Bestand leer.
+    const aktive = await this.aktiveSchueler(userId, sitzplan.klasseId);
+
+    // Neu zugeordnet werden dürfen ausschließlich aktive Schülerprofile dieser
+    // Klasse. Bereits im Dokument stehende Schülerprofile bleiben zulässig,
+    // auch wenn sie inzwischen soft-gelöscht oder verschoben wurden: Sonst
+    // ließe sich ein Altbestand mit mehreren veralteten Zuordnungen nie
+    // aufräumen, weil schon der erste Speichervorgang an den übrigen
+    // scheitern würde. Der Inkonsistenzbefund macht diese Einträge sichtbar;
+    // neu entstehen können sie über diesen Pfad nicht.
+    const erlaubteIds = new Set([
+      ...aktive.map((s) => s.id),
+      ...sitzplan.canvasDocument.zuordnungen.map((z) => z.schuelerId),
+    ]);
+
+    for (const zuordnung of parsed.data.zuordnungen) {
+      if (!erlaubteIds.has(zuordnung.schuelerId)) {
+        throw new SitzplanError(
+          'VALIDATION_ERROR',
+          'Nur aktive Schülerprofile der Klasse dieses Sitzplans dürfen zugeordnet werden.',
+        );
+      }
+    }
+
+    const validiert = SitzplanDokumentV1Schema.safeParse({
+      ...sitzplan.canvasDocument,
+      zuordnungen: sortiereZuordnungen(parsed.data.zuordnungen),
+    });
+    if (!validiert.success) {
+      throw new SitzplanError('VALIDATION_ERROR', validiert.error.errors[0].message);
+    }
+
+    return this.repository.update(sitzplanId, {
+      canvasDocument: validiert.data,
+      updatedAt: new Date(),
+    });
+  }
+
+  /**
+   * Lädt den Plan zusammen mit abgeleiteter Ablage, Belegung und
+   * Inkonsistenzbefunden. Ein Befund verhindert das Laden nie — er wird als
+   * Diagnose neben dem Plan geliefert.
+   */
+  async ansicht(userId: string, sitzplanId: string): Promise<SitzplanAnsicht> {
+    const sitzplan = await this.getById(userId, sitzplanId); // Checks existence & ownership
+    const aktive = await this.aktiveSchueler(userId, sitzplan.klasseId);
+    const nachId = new Map(aktive.map((s) => [s.id, s]));
+    const zuordnungen = sitzplan.canvasDocument.zuordnungen;
+    const sitzend = new Set(zuordnungen.map((z) => z.schuelerId));
+
+    const belegung = zuordnungen
+      .map((z) => ({ sitzplatzId: z.sitzplatzId, schueler: nachId.get(z.schuelerId) }))
+      .filter((eintrag): eintrag is { sitzplatzId: string; schueler: Schueler } => eintrag.schueler !== undefined);
+
+    return {
+      sitzplan,
+      ablage: aktive.filter((s) => !sitzend.has(s.id)),
+      belegung,
+      befunde: ermittleBefunde(zuordnungen, aktive.map((s) => s.id)),
+    };
+  }
+
+  /**
+   * Aktive Schülerprofile der Quellklasse. Eine soft-gelöschte oder fremde
+   * Klasse ist kein Ladefehler des Plans: Der Plan überlebt das Löschen seiner
+   * Quellen (ADR-0003), der Bestand ist dann eben leer.
+   */
+  private async aktiveSchueler(userId: string, klasseId: string): Promise<Schueler[]> {
+    return this.schuelerService.list(userId, klasseId).catch((err) => {
+      // Nur fachliche Klassenfehler (gelöscht, fremd, unbekannt) werden zu
+      // einem leeren Bestand. Infrastrukturfehler bleiben Fehler.
+      if (err instanceof KlasseError) return [];
+      throw err;
     });
   }
 

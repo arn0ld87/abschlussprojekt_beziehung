@@ -9,7 +9,9 @@ import {
 } from '../../src/domain/sitzplan';
 import { InMemoryKlassenRepository } from '../../src/infrastructure/db/in-memory-klassen-repository';
 import { InMemoryRaumRepository } from '../../src/infrastructure/db/in-memory-raum-repository';
+import { InMemorySchuelerRepository } from '../../src/infrastructure/db/in-memory-schueler-repository';
 import { InMemorySitzplanRepository } from '../../src/infrastructure/db/in-memory-sitzplan-repository';
+import { SchuelerService } from '../../src/domain/schueler';
 
 // Sitzplan-Grundlage (M3 #56): Klasse und Raumvorlage werden zu einem
 // persistenten Plan verbunden. Die Raumgeometrie wird beim Anlegen in ein
@@ -28,7 +30,12 @@ describe('SitzplanService (M3 #56)', () => {
     klassenService = new KlassenService(new InMemoryKlassenRepository());
     raumService = new RaumService(new InMemoryRaumRepository());
     sitzplanRepository = new InMemorySitzplanRepository();
-    sitzplanService = new SitzplanService(sitzplanRepository, klassenService, raumService);
+    sitzplanService = new SitzplanService(
+      sitzplanRepository,
+      klassenService,
+      raumService,
+      new SchuelerService(new InMemorySchuelerRepository(), klassenService),
+    );
   });
 
   async function quellen(userId = USER) {
