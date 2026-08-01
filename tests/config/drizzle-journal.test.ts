@@ -1,5 +1,8 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { execFileSync } from "node:child_process";
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { dirname, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
@@ -74,4 +77,47 @@ describe("drizzle journal", () => {
     const latest = entries[entries.length - 1]!;
     expect(existsSync(resolve(metaDir, snapshotName(latest.idx)))).toBe(true);
   });
+
+  /**
+   * Die reine Existenz des letzten Snapshots reicht nicht: Ein vorhandener,
+   * aber veralteter Snapshot ist genau der Zustand aus Issue #148. Deshalb
+   * laeuft generate hier gegen eine Kopie des Migrationsordners. Entsteht
+   * dabei eine neue SQL-Datei, weicht der Snapshot von schema.ts ab.
+   *
+   * Die Kopie haelt das Repository frei von Seiteneffekten. drizzle-kit
+   * stellt out ein "./" voran, deshalb muss der Pfad relativ uebergeben
+   * werden. Das Binary wird ueber die Modulaufloesung gesucht, damit der
+   * Test auch in einem Worktree ohne eigenes node_modules laeuft.
+   */
+  it("generates no migration against the current schema", () => {
+    const probe = mkdtempSync(resolve(tmpdir(), "drizzle-drift-"));
+    const drizzleKitBin = resolve(
+      dirname(createRequire(import.meta.url).resolve("drizzle-kit")),
+      "bin.cjs",
+    );
+
+    try {
+      cpSync(drizzleDir, probe, { recursive: true });
+      execFileSync(
+        process.execPath,
+        [
+          drizzleKitBin,
+          "generate",
+          "--schema=./src/infrastructure/db/schema.ts",
+          "--dialect=postgresql",
+          `--out=${relative(process.cwd(), probe)}`,
+        ],
+        { cwd: process.cwd(), stdio: "pipe" },
+      );
+
+      const sqlFiles = (dir: string) =>
+        readdirSync(dir)
+          .filter((file) => file.endsWith(".sql"))
+          .sort();
+
+      expect(sqlFiles(probe)).toEqual(sqlFiles(drizzleDir));
+    } finally {
+      rmSync(probe, { recursive: true, force: true });
+    }
+  }, 60_000);
 });
