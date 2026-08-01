@@ -11,11 +11,13 @@ export interface SitzplanCreateData {
   canvasDocument: SitzplanDokumentV1;
 }
 
-// Nur der Name ist in diesem Slice änderbar. Autosave schreibt später
-// Dokument und Revision unter optimistischer Nebenläufigkeitskontrolle
-// (M3 #59, ADR-0004) — bewusst noch nicht Teil dieses Ports.
+// Name und Plandokument sind änderbar: Umbenennen (M3 #56) und die
+// Schülerzuordnung (M3 #57) schreiben das vollständige validierte Dokument.
+// Die Revision bleibt bewusst außen vor — sie wird erst vom Autosave unter
+// optimistischer Nebenläufigkeitskontrolle fortgeschrieben (M3 #59, ADR-0004).
 export interface SitzplanUpdateData {
   name?: string;
+  canvasDocument?: SitzplanDokumentV1;
   updatedAt: Date;
 }
 

@@ -9,8 +9,60 @@ import { RaumGeometrieSchema } from '../raum/raum';
 // damit der eingefrorene Plan keinen schwächeren Parallelvertrag aufmacht,
 // sobald der Editor ab M3 #57/#59 Geometrie zurückschreibt.
 //
-// In diesem Slice (M3 #56) existiert ausschließlich Version 1; eine
+// In diesem Slice (M3 #56/#57) existiert ausschließlich Version 1; eine
 // Migrationsfunktion wird erst mit der zweiten Version fällig.
+
+/**
+ * Eine einzelne Schülerzuordnung (M3 #57). Bewusst eine normalisierte Liste
+ * statt `Record<SitzplatzId, SchuelerId>`: Sie passt zur bestehenden
+ * Array-Form der Geometrie, ist JSON-stabil und erlaubt eine deterministische
+ * Serialisierung (stabil nach `sitzplatzId` sortiert), damit Revisions- und
+ * Versionsvergleiche in M3 #58/#59 nicht an Reihenfolgerauschen scheitern.
+ *
+ * Die Ablage ist bewusst kein persistiertes Feld: „in der Ablage" heißt
+ * „aktiver Schüler der Klasse ohne Eintrag in `zuordnungen`". Eine zusätzlich
+ * gespeicherte Ablageliste wäre eine zweite Wahrheit.
+ */
+export const ZuordnungSchema = z.object({
+  sitzplatzId: z.string().min(1),
+  schuelerId: z.string().min(1),
+});
+
+export type Zuordnung = z.infer<typeof ZuordnungSchema>;
+
+/**
+ * Harte Zuordnungs-Invarianten in fachlicher Reihenfolge. Reihenfolge ist Teil
+ * des Vertrags: Aufrufer werten die erste Meldung als Fehlerursache aus.
+ */
+export const SITZPLAN_ZUORDNUNG_INVARIANTEN: ReadonlyArray<{
+  pruefe: (zuordnungen: Zuordnung[], sitzplatzIds: Set<string>) => boolean;
+  message: string;
+}> = [
+  {
+    pruefe: (zuordnungen, sitzplatzIds) => zuordnungen.every((z) => sitzplatzIds.has(z.sitzplatzId)),
+    message: 'Jede Zuordnung muss auf einen Sitzplatz des eingefrorenen Raumdokuments verweisen.',
+  },
+  {
+    pruefe: (zuordnungen) => new Set(zuordnungen.map((z) => z.sitzplatzId)).size === zuordnungen.length,
+    message: 'Ein Sitzplatz darf höchstens einen Schüler tragen.',
+  },
+  {
+    pruefe: (zuordnungen) => new Set(zuordnungen.map((z) => z.schuelerId)).size === zuordnungen.length,
+    message: 'Ein Schüler darf höchstens auf einem Sitzplatz sitzen.',
+  },
+  {
+    // Deterministische Serialisierung als Vertragsinvariante, nicht als bloße
+    // Zusicherung eines einzelnen Schreibpfads: Sobald Autosave und
+    // Planversionen (M3 #58/#59) weitere Schreiber öffnen, müssen zwei
+    // fachlich gleiche Zuordnungsmengen weiterhin byte-identisch persistieren,
+    // damit Revisions- und Versionsvergleiche nicht an Reihenfolgerauschen
+    // scheitern.
+    pruefe: (zuordnungen) =>
+      zuordnungen.every((z, i) => i === 0 || zuordnungen[i - 1].sitzplatzId <= z.sitzplatzId),
+    message: 'Zuordnungen müssen aufsteigend nach sitzplatzId sortiert sein.',
+  },
+];
+
 export const SitzplanDokumentV1Schema = z.object({
   version: z.literal(1),
   quelle: z.object({
@@ -18,8 +70,15 @@ export const SitzplanDokumentV1Schema = z.object({
     raumId: z.string().min(1),
   }),
   raumGeometrie: RaumGeometrieSchema,
-  // Reserviert für die Schülerzuordnung (M3 #57); in diesem Slice immer leer.
-  zuordnungen: z.array(z.never()).default([]),
+  // Schülerzuordnung (M3 #57) — leer, solange niemand platziert ist.
+  zuordnungen: z.array(ZuordnungSchema).default([]),
+}).superRefine((doc, ctx) => {
+  const sitzplatzIds = new Set(doc.raumGeometrie.sitzplaetze.map((s) => s.id));
+  for (const invariante of SITZPLAN_ZUORDNUNG_INVARIANTEN) {
+    if (!invariante.pruefe(doc.zuordnungen, sitzplatzIds)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['zuordnungen'], message: invariante.message });
+    }
+  }
 });
 
 export type SitzplanDokumentV1 = z.infer<typeof SitzplanDokumentV1Schema>;
@@ -67,3 +126,19 @@ export const UpdateSitzplanInputSchema = z.object({
 });
 
 export type UpdateSitzplanInput = z.infer<typeof UpdateSitzplanInputSchema>;
+
+/**
+ * Schreibvertrag der Schülerzuordnung (M3 #57): Der Client sendet
+ * ausschließlich die gewünschte Zuordnungsliste. Geometrie und Quelle bleiben
+ * eingefroren und werden serverseitig aus dem bestehenden Dokument
+ * übernommen — der Client kann sie über diesen Pfad nicht verändern.
+ * Debounce-Autosave und Revisionskonflikte folgen mit M3 #59 (ADR-0004).
+ */
+export const SetzeZuordnungenInputSchema = z.object({
+  zuordnungen: z.array(ZuordnungSchema, {
+    required_error: 'Zuordnungen sind erforderlich.',
+    invalid_type_error: 'Zuordnungen müssen eine Liste sein.',
+  }),
+});
+
+export type SetzeZuordnungenInput = z.infer<typeof SetzeZuordnungenInputSchema>;

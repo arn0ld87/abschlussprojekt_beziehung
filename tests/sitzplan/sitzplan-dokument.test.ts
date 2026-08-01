@@ -19,6 +19,18 @@ const einzeltisch: RaumObjektV1 = {
   rotation_deg: 0,
 };
 
+// Zwei adressierbare Sitzplätze — nötig, um die Reihenfolge-Invariante der
+// Zuordnungen überhaupt verletzen zu können.
+const doppeltisch: RaumObjektV1 = {
+  id: 'obj_t2',
+  typ: 'table_double',
+  x_cm: 300,
+  y_cm: 100,
+  breite_cm: 120,
+  tiefe_cm: 60,
+  rotation_deg: 0,
+};
+
 const dokument = (geometrie: Record<string, unknown>) => ({
   version: 1,
   quelle: { klasseId: 'k1', raumId: 'r1' },
@@ -72,5 +84,73 @@ describe('SitzplanDokumentV1 erbt den Raumgeometrie-Vertrag (M3 #56)', () => {
   it('lehnt einen Tisch ohne seine kanonischen Sitzplätze ab', () => {
     const ergebnis = SitzplanDokumentV1Schema.safeParse(dokument({ sitzplaetze: [] }));
     expect(ergebnis.success).toBe(false);
+  });
+});
+
+// Der Zuordnungsteil des Vertrags (M3 #57). Die Invarianten hängen an der
+// eingefrorenen Geometrie: Ein Plan kann nur Sitzplätze belegen, die sein
+// eigenes Raumdokument kennt.
+describe('SitzplanDokumentV1 sichert die Zuordnungs-Invarianten (M3 #57)', () => {
+  const platz = erzeugeSitzplaetze(einzeltisch)[0].id;
+  const mitZuordnungen = (zuordnungen: unknown) => ({ ...dokument({}), zuordnungen });
+
+  it('akzeptiert eine gültige Zuordnung auf einen eingefrorenen Sitzplatz', () => {
+    const ergebnis = SitzplanDokumentV1Schema.safeParse(
+      mitZuordnungen([{ sitzplatzId: platz, schuelerId: 'sch_fantasie_1' }]),
+    );
+    expect(ergebnis.success).toBe(true);
+  });
+
+  it('lehnt Zuordnungen auf unbekannte Sitzplätze ab', () => {
+    const ergebnis = SitzplanDokumentV1Schema.safeParse(
+      mitZuordnungen([{ sitzplatzId: 'obj_fehlt__sitz_1', schuelerId: 'sch_fantasie_1' }]),
+    );
+    expect(ergebnis.success).toBe(false);
+    expect(ergebnis.success === false && ergebnis.error.errors[0].message).toMatch(/Sitzplatz/);
+  });
+
+  it('lehnt einen doppelt belegten Sitzplatz ab', () => {
+    const ergebnis = SitzplanDokumentV1Schema.safeParse(
+      mitZuordnungen([
+        { sitzplatzId: platz, schuelerId: 'sch_fantasie_1' },
+        { sitzplatzId: platz, schuelerId: 'sch_fantasie_2' },
+      ]),
+    );
+    expect(ergebnis.success).toBe(false);
+  });
+
+  it('erzwingt die deterministische Reihenfolge als Vertragsinvariante', () => {
+    const alleSitze = erzeugeSitzplaetze(doppeltisch);
+    const geometrieMitZweiPlaetzen = {
+      ...dokument({ objekte: [doppeltisch], sitzplaetze: alleSitze }),
+    };
+    const [ersterPlatz, zweiterPlatz] = alleSitze.map((s) => s.id);
+    expect(ersterPlatz < zweiterPlatz).toBe(true);
+
+    const sortiert = SitzplanDokumentV1Schema.safeParse({
+      ...geometrieMitZweiPlaetzen,
+      zuordnungen: [
+        { sitzplatzId: ersterPlatz, schuelerId: 'sch_fantasie_1' },
+        { sitzplatzId: zweiterPlatz, schuelerId: 'sch_fantasie_2' },
+      ],
+    });
+    expect(sortiert.success).toBe(true);
+
+    const unsortiert = SitzplanDokumentV1Schema.safeParse({
+      ...geometrieMitZweiPlaetzen,
+      zuordnungen: [
+        { sitzplatzId: zweiterPlatz, schuelerId: 'sch_fantasie_2' },
+        { sitzplatzId: ersterPlatz, schuelerId: 'sch_fantasie_1' },
+      ],
+    });
+    expect(unsortiert.success).toBe(false);
+    expect(unsortiert.success === false && unsortiert.error.errors.some((e) => /sortiert/.test(e.message))).toBe(true);
+  });
+
+  it('lehnt unvollständige Zuordnungseinträge ab', () => {
+    expect(SitzplanDokumentV1Schema.safeParse(mitZuordnungen([{ sitzplatzId: platz }])).success).toBe(false);
+    expect(SitzplanDokumentV1Schema.safeParse(mitZuordnungen([{ sitzplatzId: '', schuelerId: 'x' }])).success).toBe(
+      false,
+    );
   });
 });

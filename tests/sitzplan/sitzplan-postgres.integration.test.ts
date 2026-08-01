@@ -5,8 +5,10 @@ import { sitzplaene, users } from '../../src/infrastructure/db/schema';
 import { DrizzleKlassenRepository } from '../../src/infrastructure/db/klassen-repository';
 import { DrizzleRaumRepository } from '../../src/infrastructure/db/raum-repository';
 import { DrizzleSitzplanRepository } from '../../src/infrastructure/db/sitzplan-repository';
+import { DrizzleSchuelerRepository } from '../../src/infrastructure/db/schueler-repository';
 import { KlassenService } from '../../src/domain/klasse';
 import { RaumService } from '../../src/domain/raum';
+import { SchuelerService } from '../../src/domain/schueler';
 import { SitzplanService, SitzplanError } from '../../src/domain/sitzplan';
 
 // M3-56-Akzeptanzpfad gegen eine echte PostgreSQL-Instanz mit
@@ -22,8 +24,14 @@ const USER_B = 'user_m3_56_b';
 function dienste() {
   const klassenService = new KlassenService(new DrizzleKlassenRepository());
   const raumService = new RaumService(new DrizzleRaumRepository());
-  const sitzplanService = new SitzplanService(new DrizzleSitzplanRepository(), klassenService, raumService);
-  return { klassenService, raumService, sitzplanService };
+  const schuelerService = new SchuelerService(new DrizzleSchuelerRepository(), klassenService);
+  const sitzplanService = new SitzplanService(
+    new DrizzleSitzplanRepository(),
+    klassenService,
+    raumService,
+    schuelerService,
+  );
+  return { klassenService, raumService, schuelerService, sitzplanService };
 }
 
 async function quellen(userId: string, suffix: string) {
@@ -109,6 +117,64 @@ lauf('M3-56 Sitzplan-Grundlage gegen Test-PostgreSQL', () => {
     expect(rohJson).not.toContain('attrs');
     expect(rohJson).not.toContain('className');
     expect(JSON.parse(rohJson)).toEqual(roh);
+  });
+
+  it('hält den Akzeptanzpfad der Schülerzuordnung über ein Neuladen hinweg (M3 #57)', async () => {
+    const { schuelerService, sitzplanService } = dienste();
+    const { klasse, raum } = await quellen(USER_A, 'Zuordnung');
+
+    const plan = await sitzplanService.create(USER_A, {
+      name: 'Fantasieplan Zuordnung',
+      klasseId: klasse.id,
+      raumId: raum.id,
+    });
+    const [platzA, platzB] = plan.canvasDocument.raumGeometrie.sitzplaetze.map((s) => s.id);
+
+    const anna = await schuelerService.create(USER_A, klasse.id, { name: 'Anna Fantasie' });
+    const bruno = await schuelerService.create(USER_A, klasse.id, { name: 'Bruno Fantasie' });
+
+    // Ablage → Sitzplatz, zweiter Schüler, Tausch, Zurücklegen
+    await sitzplanService.setzeZuordnungen(USER_A, plan.id, {
+      zuordnungen: [{ sitzplatzId: platzA, schuelerId: anna.id }],
+    });
+    await sitzplanService.setzeZuordnungen(USER_A, plan.id, {
+      zuordnungen: [
+        { sitzplatzId: platzA, schuelerId: anna.id },
+        { sitzplatzId: platzB, schuelerId: bruno.id },
+      ],
+    });
+    await sitzplanService.setzeZuordnungen(USER_A, plan.id, {
+      zuordnungen: [
+        { sitzplatzId: platzA, schuelerId: bruno.id },
+        { sitzplatzId: platzB, schuelerId: anna.id },
+      ],
+    });
+    await sitzplanService.setzeZuordnungen(USER_A, plan.id, {
+      zuordnungen: [{ sitzplatzId: platzA, schuelerId: bruno.id }],
+    });
+
+    // Neuladen mit frischen Instanzen — die Zuordnung bleibt erhalten
+    const nachReload = await dienste().sitzplanService.ansicht(USER_A, plan.id);
+    expect(nachReload.sitzplan.canvasDocument.zuordnungen).toEqual([
+      { sitzplatzId: platzA, schuelerId: bruno.id },
+    ]);
+    expect(nachReload.ablage.map((s) => s.id)).toEqual([anna.id]);
+    expect(nachReload.befunde).toEqual([]);
+
+    // Das persistierte JSONB bleibt Konva-frei und vertragskonform
+    const db = getDb();
+    const [row] = await db.select().from(sitzplaene).where(eq(sitzplaene.id, plan.id));
+    const roh = row.canvasDocument as Record<string, unknown>;
+    expect(roh.zuordnungen).toEqual([{ sitzplatzId: platzA, schuelerId: bruno.id }]);
+    expect(JSON.stringify(roh)).not.toContain('Konva');
+
+    // Soft-gelöschte Schüler werden nicht mehr angeboten, erzeugen aber einen
+    // Befund statt eines Ladefehlers.
+    await schuelerService.delete(USER_A, klasse.id, bruno.id);
+    const mitBefund = await dienste().sitzplanService.ansicht(USER_A, plan.id);
+    expect(mitBefund.ablage.map((s) => s.id)).toEqual([anna.id]);
+    expect(mitBefund.befunde).toHaveLength(1);
+    expect(mitBefund.befunde[0].schuelerId).toBe(bruno.id);
   });
 
   it('setzt Ownership über den gesamten Lebenszyklus durch', async () => {

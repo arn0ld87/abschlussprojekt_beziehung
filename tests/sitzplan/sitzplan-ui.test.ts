@@ -5,12 +5,15 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { KlassenService } from '../../src/domain/klasse';
 import { RaumService } from '../../src/domain/raum';
+import { SchuelerService } from '../../src/domain/schueler';
 import { SitzplanService } from '../../src/domain/sitzplan';
 import { InMemoryKlassenRepository } from '../../src/infrastructure/db/in-memory-klassen-repository';
 import { InMemoryRaumRepository } from '../../src/infrastructure/db/in-memory-raum-repository';
+import { InMemorySchuelerRepository } from '../../src/infrastructure/db/in-memory-schueler-repository';
 import { InMemorySitzplanRepository } from '../../src/infrastructure/db/in-memory-sitzplan-repository';
 import { setGlobalKlassenService } from '../../src/services/klasse';
 import { setGlobalRaumService } from '../../src/services/raum';
+import { setGlobalSchuelerService } from '../../src/services/schueler';
 import { setGlobalSitzplanService } from '../../src/services/sitzplan';
 import { setGlobalAuthService } from '../../src/services/auth';
 import { AuthService } from '../../src/services/auth/auth-service';
@@ -56,14 +59,22 @@ describe('Sitzplan UI (M3 #56)', () => {
   let authRepo: InMemoryAuthRepository;
   let klassenService: KlassenService;
   let raumService: RaumService;
+  let schuelerService: SchuelerService;
   let sitzplanService: SitzplanService;
 
   beforeEach(() => {
     klassenService = new KlassenService(new InMemoryKlassenRepository());
     raumService = new RaumService(new InMemoryRaumRepository());
-    sitzplanService = new SitzplanService(new InMemorySitzplanRepository(), klassenService, raumService);
+    schuelerService = new SchuelerService(new InMemorySchuelerRepository(), klassenService);
+    sitzplanService = new SitzplanService(
+      new InMemorySitzplanRepository(),
+      klassenService,
+      raumService,
+      schuelerService,
+    );
     setGlobalKlassenService(klassenService);
     setGlobalRaumService(raumService);
+    setGlobalSchuelerService(schuelerService);
     setGlobalSitzplanService(sitzplanService);
 
     authRepo = new InMemoryAuthRepository();
@@ -154,6 +165,19 @@ describe('Sitzplan UI (M3 #56)', () => {
       const str = JSON.stringify(await SitzplanDetailPage({ params: Promise.resolve({ id: sitzplan.id }) }));
       expect(str).toContain('800 × 600 cm · Raster 50 cm');
       expect(str).not.toContain('1200 × 600 cm');
+    });
+
+    it('reicht die aktiven Schüler der Klasse als Ablage an den Editor durch (M3 #57)', async () => {
+      await setSession(mockUser);
+      const { klasse, sitzplan } = await anlegen();
+      await schuelerService.create('u1', klasse.id, { name: 'Anna Fantasie' });
+      const bruno = await schuelerService.create('u1', klasse.id, { name: 'Bruno Fantasie' });
+      await schuelerService.delete('u1', klasse.id, bruno.id);
+
+      const str = JSON.stringify(await SitzplanDetailPage({ params: Promise.resolve({ id: sitzplan.id }) }));
+      expect(str).toContain('Anna Fantasie');
+      // Soft-gelöschte Schüler werden beim Laden nicht neu angeboten.
+      expect(str).not.toContain('Bruno Fantasie');
     });
 
     it('zeigt einen Fallback für unbekannte und fremde Pläne', async () => {
