@@ -40,6 +40,17 @@ describe("drizzle journal", () => {
     );
   });
 
+  /**
+   * drizzle ordnet ueber idx, nicht ueber when. Ein Zeitstempel, der aus der
+   * Reihe faellt, verraet aber ein von Hand verbogenes Journal — also genau die
+   * Fehlerklasse, die zu Issue #148 gefuehrt hat.
+   */
+  it("orders timestamps strictly ascending", () => {
+    const timestamps = entries.map((entry) => entry.when);
+    expect(timestamps).toEqual([...timestamps].sort((a, b) => a - b));
+    expect(new Set(timestamps).size).toBe(timestamps.length);
+  });
+
   it("references an existing sql file for every entry", () => {
     const missing = entries
       .filter((entry) => !existsSync(resolve(drizzleDir, `${entry.tag}.sql`)))

@@ -9,6 +9,24 @@
 -- Die Abweichung ist rein namensbezogen: Spalten, Typen, Referenzen, ON DELETE
 -- und Daten bleiben identisch. Ohne diese Angleichung sieht drizzle-kit die
 -- Constraints dauerhaft als fehlend und erzeugt sie bei jedem generate erneut.
+--
+-- Gedroppt werden beide Namensformen: die Zielnamen, damit die Migration auch
+-- auf Datenbanken laeuft, die vorher per drizzle-kit push angeglichen wurden,
+-- und die Postgres-Defaultnamen aus den Migrationen 0001 bis 0006. Beides sind
+-- No-Ops, wenn der jeweilige Constraint nicht existiert.
+
+ALTER TABLE "sessions" DROP CONSTRAINT IF EXISTS "sessions_user_id_users_id_fk";
+ALTER TABLE "accounts" DROP CONSTRAINT IF EXISTS "accounts_user_id_users_id_fk";
+ALTER TABLE "klassen" DROP CONSTRAINT IF EXISTS "klassen_user_id_users_id_fk";
+ALTER TABLE "schueler" DROP CONSTRAINT IF EXISTS "schueler_klasse_id_klassen_id_fk";
+ALTER TABLE "sitzregeln" DROP CONSTRAINT IF EXISTS "sitzregeln_schueler_id_schueler_id_fk";
+ALTER TABLE "sitzregeln" DROP CONSTRAINT IF EXISTS "sitzregeln_klasse_id_klassen_id_fk";
+ALTER TABLE "sitzregeln" DROP CONSTRAINT IF EXISTS "sitzregeln_target_schueler_id_schueler_id_fk";
+ALTER TABLE "raeume" DROP CONSTRAINT IF EXISTS "raeume_user_id_users_id_fk";
+ALTER TABLE "sitzplaene" DROP CONSTRAINT IF EXISTS "sitzplaene_user_id_users_id_fk";
+ALTER TABLE "sitzplaene" DROP CONSTRAINT IF EXISTS "sitzplaene_klasse_id_klassen_id_fk";
+ALTER TABLE "sitzplaene" DROP CONSTRAINT IF EXISTS "sitzplaene_raum_id_raeume_id_fk";
+ALTER TABLE "users" DROP CONSTRAINT IF EXISTS "users_email_unique";
 
 ALTER TABLE "sessions" DROP CONSTRAINT IF EXISTS "sessions_user_id_fkey";
 ALTER TABLE "accounts" DROP CONSTRAINT IF EXISTS "accounts_user_id_fkey";
