@@ -61,6 +61,23 @@ export function tausche(zuordnungen: readonly Zuordnung[], sitzplatzA: string, s
   return sortiereZuordnungen(getauscht);
 }
 
+/**
+ * Wertgleichheit zweier Zuordnungslisten (M3 #58).
+ *
+ * Der Vergleich ist bewusst positionsgenau statt mengenbasiert: Die Sortierung
+ * nach `sitzplatzId` ist Vertragsinvariante des Dokuments und wird von jedem
+ * Command wie auch vom Server erzwungen. Zwei fachlich gleiche Listen sind
+ * deshalb immer auch positionsgleich. Käme eine unsortierte Liste doch einmal
+ * hier an, meldet der Vergleich „ungleich" — die Oberfläche zeigt dann
+ * „geändert" statt fälschlich „gespeichert", also in die sichere Richtung.
+ */
+export function gleicheZuordnungen(a: readonly Zuordnung[], b: readonly Zuordnung[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((z, i) => z.sitzplatzId === b[i].sitzplatzId && z.schuelerId === b[i].schuelerId)
+  );
+}
+
 /** Legt einen Schüler zurück in die Ablage. Für nicht sitzende Schüler folgenlos. */
 export function entferne(zuordnungen: readonly Zuordnung[], schuelerId: string): Zuordnung[] {
   return sortiereZuordnungen(zuordnungen.filter((z) => z.schuelerId !== schuelerId));

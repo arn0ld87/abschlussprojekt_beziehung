@@ -162,7 +162,9 @@ describe('Schülerzuordnung — Bedienvertrag (M3 #57)', () => {
     });
 
     it('setzt den letzten bestätigten Stand zurück, wenn das Speichern fehlschlägt', () => {
-      expect(quelle).toMatch(/setZuordnungen\(vorher\)/);
+      // Seit M3 #58 trägt die Historie den Editorzustand; zurückgesetzt wird
+      // deshalb der vollständige Historienwert, nicht nur die Zuordnungsliste.
+      expect(quelle).toMatch(/setHistorie\(vorher\)/);
     });
 
     it('verliert den Tastaturfokus während des Speicherns nicht', () => {

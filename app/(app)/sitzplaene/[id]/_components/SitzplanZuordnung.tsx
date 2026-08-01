@@ -1,11 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import type { RaumObjektV1 } from '../../../../../src/domain/raum/objekte';
 import type { SitzplatzV1 } from '../../../../../src/domain/raum/sitzplaetze';
 import type { Zuordnung } from '../../../../../src/domain/sitzplan';
 import type { ZuordnungBefund } from '../../../../../src/domain/sitzplan/zuordnung-commands';
+import {
+  bestaetige,
+  erzeugeHistorie,
+  kannRedo,
+  kannUndo,
+  setzeZurueck,
+  wendeAn,
+} from '../../../../../src/domain/sitzplan/historie';
+import {
+  AENDERUNGS_ZUSTAND_TEXT,
+  ermittlePlattform,
+  ermittleTastaturBefehl,
+  ermittleZuordnungsZustand,
+  macheRueckgaengig,
+  stelleWiederHer,
+  type HistorieAktion,
+  type ZuordnungsHistorie,
+} from './historie-bedienung';
 import {
   START_MELDUNG,
   aktiviereSitzplatz,
@@ -69,6 +87,15 @@ export interface SitzplanZuordnungProps {
 const UNBEKANNT_FARBE = '#9ca3af';
 const UNBEKANNT_INITIALEN = '?';
 
+const historienKnopf: React.CSSProperties = {
+  padding: '0.5rem 0.75rem',
+  borderRadius: '6px',
+  border: '1px solid #7c2d12',
+  background: '#ffffff',
+  color: '#7c2d12',
+  fontSize: '0.875rem',
+};
+
 /**
  * Schülerzuordnung im Sitzplan-Editor (M3 #57).
  *
@@ -87,6 +114,11 @@ const UNBEKANNT_INITIALEN = '?';
  * Schüler ohne Eintrag in den Zuordnungen". Persistiert wird ausschließlich
  * über den Sitzplan-Endpunkt; diese Komponente kennt weder Datenbank noch
  * Konva-Serialisierung.
+ *
+ * Undo/Redo und der sichtbare Änderungszustand (M3 #58) liegen ebenso außerhalb
+ * der Komponente: Der Historienstapel ist reiner, nie persistierter
+ * Clientzustand aus vollständigen Zuordnungslisten — kein Ereignisprotokoll
+ * (ADR-0010).
  */
 export default function SitzplanZuordnung({
   sitzplanId,
@@ -95,12 +127,26 @@ export default function SitzplanZuordnung({
   zuordnungen: initialeZuordnungen,
   befunde,
 }: SitzplanZuordnungProps) {
-  const [zuordnungen, setZuordnungen] = useState<Zuordnung[]>(initialeZuordnungen);
+  const [historie, setHistorie] = useState<ZuordnungsHistorie>(() => erzeugeHistorie(initialeZuordnungen));
   const [auswahl, setAuswahl] = useState<Auswahl>(null);
   const [meldung, setMeldung] = useState(START_MELDUNG);
   const [fehler, setFehler] = useState('');
   const [speichert, setSpeichert] = useState(false);
 
+  // Wechselt die Seite auf einen anderen Plan, wird die Historie verworfen —
+  // ihre Stapel bezögen sich sonst auf ein anderes Dokument. Bewusst als
+  // Zustandskorrektur während des Renderns statt als Effekt, damit nie ein
+  // Zwischenbild mit fremder Historie erscheint.
+  const [geladenerPlan, setGeladenerPlan] = useState(sitzplanId);
+  if (geladenerPlan !== sitzplanId) {
+    setGeladenerPlan(sitzplanId);
+    setHistorie(setzeZurueck(historie, initialeZuordnungen));
+    setAuswahl(null);
+    setMeldung(START_MELDUNG);
+    setFehler('');
+  }
+
+  const zuordnungen = historie.gegenwart;
   const schuelerNach = new Map(schueler.map((s) => [s.id, s]));
   const belegtNach = new Map(zuordnungen.map((z) => [z.sitzplatzId, z.schuelerId]));
   const sitzend = new Set(zuordnungen.map((z) => z.schuelerId));
@@ -114,43 +160,47 @@ export default function SitzplanZuordnung({
   };
 
   /**
-   * Schreibt den vollständigen gewünschten Zustand. Schlägt das Speichern
-   * fehl, wird auf den letzten bestätigten Stand zurückgesetzt — die
-   * Oberfläche zeigt dann nie eine Zuordnung, die der Server nicht kennt.
+   * Schreibt die Gegenwart des neuen Historienwerts. Schlägt das Speichern
+   * fehl, wird die vollständige vorherige Historie wiederhergestellt — die
+   * Oberfläche zeigt dann nie eine Zuordnung, die der Server nicht kennt, und
+   * ein misslungener Schritt bleibt weder rückgängig- noch wiederherstellbar.
+   * Erfolg verschiebt nur die Vergleichsbasis; die Stapel bleiben erhalten,
+   * damit Undo nach dem Speichern weiterhin möglich ist.
    */
-  const speichere = async (neu: Zuordnung[], erfolgsmeldung: string) => {
-    const vorher = zuordnungen;
+  const speichere = useCallback(
+    async (vorher: ZuordnungsHistorie, naechste: ZuordnungsHistorie, erfolgsmeldung: string) => {
+      setHistorie(naechste);
+      setAuswahl(null);
+      setFehler('');
+      setSpeichert(true);
 
-    setZuordnungen(neu);
-    setAuswahl(null);
-    setFehler('');
-    setSpeichert(true);
+      try {
+        const res = await fetch(`/api/sitzplaene/${sitzplanId}/zuordnungen`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ zuordnungen: naechste.gegenwart }),
+        });
 
-    try {
-      const res = await fetch(`/api/sitzplaene/${sitzplanId}/zuordnungen`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ zuordnungen: neu }),
-      });
-
-      if (res.ok) {
-        const sitzplan = await res.json();
-        setZuordnungen(sitzplan.canvasDocument.zuordnungen);
-        setMeldung(erfolgsmeldung);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setZuordnungen(vorher);
-        setFehler(data.error?.message || 'Speichern fehlgeschlagen.');
+        if (res.ok) {
+          const sitzplan = await res.json();
+          setHistorie((h) => bestaetige(h, sitzplan.canvasDocument.zuordnungen));
+          setMeldung(erfolgsmeldung);
+        } else {
+          const data = await res.json().catch(() => ({}));
+          setHistorie(vorher);
+          setFehler(data.error?.message || 'Speichern fehlgeschlagen.');
+          setMeldung('Änderung verworfen.');
+        }
+      } catch {
+        setHistorie(vorher);
+        setFehler('Speichern fehlgeschlagen.');
         setMeldung('Änderung verworfen.');
+      } finally {
+        setSpeichert(false);
       }
-    } catch {
-      setZuordnungen(vorher);
-      setFehler('Speichern fehlgeschlagen.');
-      setMeldung('Änderung verworfen.');
-    } finally {
-      setSpeichert(false);
-    }
-  };
+    },
+    [sitzplanId],
+  );
 
   /**
    * Führt aus, was das Interaktionsmodul entschieden hat. Während eines
@@ -162,7 +212,7 @@ export default function SitzplanZuordnung({
     if (speichert) return;
 
     if (interaktion.art === 'speichern') {
-      void speichere(interaktion.zuordnungen, interaktion.meldung);
+      void speichere(historie, wendeAn(historie, interaktion.zuordnungen), interaktion.meldung);
       return;
     }
     if (interaktion.art === 'auswahl') {
@@ -170,6 +220,55 @@ export default function SitzplanZuordnung({
     }
     setMeldung(interaktion.meldung);
   };
+
+  /** Führt aus, was die Historien-Bedienlogik entschieden hat. */
+  const fuehreHistorieAus = useCallback(
+    (aktion: HistorieAktion) => {
+      if (speichert) return;
+
+      if (aktion.art === 'anwenden') {
+        void speichere(historie, aktion.historie, aktion.meldung);
+        return;
+      }
+      setMeldung(aktion.meldung);
+    },
+    [historie, speichert, speichere],
+  );
+
+  // Tastaturkürzel für Rückgängig und Wiederherstellen. Die Entscheidung, ob
+  // ein Ereignis überhaupt ein Historienbefehl ist — Plattformmodifikator,
+  // Fokus in einer Texteingabe wie dem Namensfeld des Plans — liegt im
+  // framework-freien Modul und ist dort ohne DOM geprüft.
+  useEffect(() => {
+    const plattform = ermittlePlattform(navigator.userAgent);
+
+    const beiTaste = (e: KeyboardEvent) => {
+      const ziel = e.target instanceof HTMLElement ? e.target : null;
+      const befehl = ermittleTastaturBefehl(
+        {
+          key: e.key,
+          metaKey: e.metaKey,
+          ctrlKey: e.ctrlKey,
+          shiftKey: e.shiftKey,
+          ziel: ziel
+            ? {
+                tagName: ziel.tagName,
+                typ: ziel instanceof HTMLInputElement ? ziel.type : null,
+                istEditierbar: ziel.isContentEditable,
+              }
+            : null,
+        },
+        plattform,
+      );
+
+      if (!befehl) return;
+      e.preventDefault();
+      fuehreHistorieAus(befehl === 'rueckgaengig' ? macheRueckgaengig(historie) : stelleWiederHer(historie));
+    };
+
+    document.addEventListener('keydown', beiTaste);
+    return () => document.removeEventListener('keydown', beiTaste);
+  }, [historie, fuehreHistorieAus]);
 
   const erlaubeDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -181,6 +280,7 @@ export default function SitzplanZuordnung({
     e.dataTransfer.effectAllowed = 'move';
   };
 
+  const aenderungsZustand = ermittleZuordnungsZustand(historie, { speichert, fehler: fehler !== '' });
   const ausgewaehlterSitzplatzId = auswahl?.art === 'sitzplatz' ? auswahl.sitzplatzId : null;
   const ausgewaehlterInhaber = ausgewaehlterSitzplatzId ? belegtNach.get(ausgewaehlterSitzplatzId) : undefined;
 
@@ -232,12 +332,51 @@ export default function SitzplanZuordnung({
         {speichert ? 'Speichere …' : meldung}
       </p>
 
+      {/* Historien-Bedienelemente. Bewusst `role="group"` statt `role="toolbar"`:
+          Eine Toolbar verpflichtet zur Pfeiltastennavigation mit einem
+          Tabstopp; hier sind beide Schaltflächen einzeln erreichbar. Der
+          Änderungszustand steht daneben als sichtbarer Text und ist bewusst
+          keine zweite Live-Region — angesagt wird über die Statuszeile
+          darüber, damit eine Änderung nicht doppelt vorgelesen wird. */}
+      <div
+        role="group"
+        aria-label="Änderungshistorie"
+        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 1rem 0', flexWrap: 'wrap' }}
+      >
+        <button
+          type="button"
+          className="sitzplan-ziel"
+          aria-disabled={speichert || !kannUndo(historie)}
+          aria-keyshortcuts="Control+Z Meta+Z"
+          onClick={() => fuehreHistorieAus(macheRueckgaengig(historie))}
+          style={historienKnopf}
+        >
+          Rückgängig
+        </button>
+        <button
+          type="button"
+          className="sitzplan-ziel"
+          aria-disabled={speichert || !kannRedo(historie)}
+          aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z Control+Y"
+          onClick={() => fuehreHistorieAus(stelleWiederHer(historie))}
+          style={historienKnopf}
+        >
+          Wiederherstellen
+        </button>
+        <span style={{ color: '#4b5563', fontSize: '0.875rem' }}>
+          Änderungszustand: <strong>{AENDERUNGS_ZUSTAND_TEXT[aenderungsZustand]}</strong>
+        </span>
+      </div>
+
       <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
         Bedienung mit der Maus durch Ziehen und Ablegen. Ohne Maus vollständig mit der Tastatur:
         Schüler oder belegten Sitzplatz <strong>auswählen</strong>, dann den Zielplatz aktivieren —
         ein belegter Zielplatz führt den Tausch aus. Ein Schüler aus der Ablage lässt sich nur auf
         einen freien Platz setzen. &bdquo;Zurück in die Ablage&ldquo; legt den ausgewählten Schüler
-        wieder ab.
+        wieder ab. Zuordnungsschritte lassen sich rückgängig machen und wiederherstellen — über die
+        Schaltflächen oder mit <kbd>Strg</kbd>+<kbd>Z</kbd> beziehungsweise <kbd>Cmd</kbd>+<kbd>Z</kbd>
+        (mit <kbd>Umschalt</kbd> für Wiederherstellen). Im Namensfeld des Plans bleibt das Kürzel der
+        Texteingabe vorbehalten.
       </p>
 
       <SitzplanCanvas
