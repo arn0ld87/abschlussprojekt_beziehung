@@ -16,6 +16,8 @@ Diese Begriffe sind in Code, Schemas, Schnittstellen, Tests und Dokumentation ka
 | Planversion | unveränderlicher benannter Snapshot | Revision |
 | Sitzregel | harte Bedingung oder gewichteter Wunsch | Constraint ohne Präzisierung |
 | Planvorschlag | noch nicht übernommene Änderung | Ergebnis, Mutation |
+| Editor-Historie | begrenzter Stapel vollständiger Editorzustände der laufenden Bearbeitung | Ereignisprotokoll, Undo-Log |
+| Änderungszustand | sichtbarer Vergleich des Editorzustands mit dem zuletzt bestätigten Serverdokument | Dirty-Flag |
 
 ## Invarianten
 
@@ -24,6 +26,7 @@ Diese Begriffe sind in Code, Schemas, Schnittstellen, Tests und Dokumentation ka
 - Jede Zuordnung verweist auf einen existierenden Sitzplatz der eingefrorenen Raumgeometrie des Sitzplans.
 - Nur aktive Schülerprofile der Quellklasse des Sitzplans dürfen zugeordnet werden; bereits im Dokument stehende Einträge bleiben bis zum Zurücklegen zulässig.
 - Die Ablage wird nie gespeichert; sie ist die Differenz aus aktiven Schülerprofilen und Zuordnungen.
+- Die Editor-Historie ist reiner Clientzustand aus vollständigen Dokumenten; sie wird nie persistiert und endet mit der Bearbeitung.
 - Harte Sitzregeln werden nie verletzt.
 - Das Wiederherstellen einer Planversion erzeugt eine neue Revision und verändert die Planversion nicht.
 - KI-Ausgabe wird erst nach fachlicher und struktureller Validierung sowie ausdrücklicher Bestätigung angewendet.

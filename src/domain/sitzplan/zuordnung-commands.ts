@@ -29,7 +29,10 @@ export function sortiereZuordnungen(zuordnungen: readonly Zuordnung[]): Zuordnun
  * (Invariante 3). War der Zielplatz von einem anderen Schüler belegt, kehrt
  * dieser in die Ablage zurück (Invariante 2) — die Bedienoberfläche bietet
  * diesen Weg nur für freie Plätze an und leitet den belegten Fall bewusst auf
- * {@link tausche}, damit niemand versehentlich verdrängt wird.
+ * {@link tausche}, damit niemand versehentlich verdrängt wird. Diese Führung
+ * gilt dauerhaft und unabhängig davon, ob der Editor Undo anbietet: Eine
+ * Verdrängung, die nur sehende Nutzer bemerken, ist kein zulässiger stiller
+ * Datenverlust.
  */
 export function setzeSchueler(
   zuordnungen: readonly Zuordnung[],
@@ -59,6 +62,23 @@ export function tausche(zuordnungen: readonly Zuordnung[], sitzplatzA: string, s
   if (aufA) getauscht.push({ sitzplatzId: sitzplatzB, schuelerId: aufA.schuelerId });
 
   return sortiereZuordnungen(getauscht);
+}
+
+/**
+ * Wertgleichheit zweier Zuordnungslisten (M3 #58).
+ *
+ * Der Vergleich ist bewusst positionsgenau statt mengenbasiert: Die Sortierung
+ * nach `sitzplatzId` ist Vertragsinvariante des Dokuments und wird von jedem
+ * Command wie auch vom Server erzwungen. Zwei fachlich gleiche Listen sind
+ * deshalb immer auch positionsgleich. Käme eine unsortierte Liste doch einmal
+ * hier an, meldet der Vergleich „ungleich" — die Oberfläche zeigt dann
+ * „geändert" statt fälschlich „gespeichert", also in die sichere Richtung.
+ */
+export function gleicheZuordnungen(a: readonly Zuordnung[], b: readonly Zuordnung[]): boolean {
+  return (
+    a.length === b.length &&
+    a.every((z, i) => z.sitzplatzId === b[i].sitzplatzId && z.schuelerId === b[i].schuelerId)
+  );
 }
 
 /** Legt einen Schüler zurück in die Ablage. Für nicht sitzende Schüler folgenlos. */
