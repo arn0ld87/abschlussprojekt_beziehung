@@ -14,6 +14,16 @@ PostgreSQL; Dependabot hält Dependencies wöchentlich und gruppiert aktuell.
 Welche Slices dahinterstehen und was davon verifiziert ist, steht in
 [`docs/STATUS.md`](docs/STATUS.md).
 
+Die Next.js-Scaffold läuft seit M0-Slice
+[#18](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/18), die
+CI-Pipeline seit
+[#19](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/19) und die
+Docker-Compose-Umgebung samt Healthcheck seit
+[#20](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/20).
+[#27 Foundation-Baseline](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/27)
+hat Dokumentation und Gates synchronisiert; seither sind Lint, Typecheck, Vitest
+und Build dauerhaft aktiv.
+
 ### Voraussetzungen
 
 - Bun 1.3 oder neuer
