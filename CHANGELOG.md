@@ -8,6 +8,15 @@ Alle relevanten Änderungen an Sitzplan werden in dieser Datei dokumentiert.
 
 - Sitzplan-Grundlage (M3 #56): Drizzle-Tabelle `sitzplaene` mit Migration `0006_sitzplaene.sql` (`user_id`, `klasse_id`, `raum_id`, `name`, `revision`, `dokument_version`, `canvas_document` als JSONB, Soft-Delete via `deleted_at`), versionierter und Konva-freier Zod-Vertrag `SitzplanDokumentV1` mit eingefrorener Raumgeometrie inklusive stabiler Sitzplatz-IDs, Quellmetadaten zu Klasse und Raumvorlage sowie noch leerer Schülerzuordnung (ADR-0003) — die harten Geometrie-Invarianten (Raumgrenzen, eindeutige Objekt- und Sitzplatz-IDs, Parent-Integrität, kanonische Sitzplatzmenge) liegen dafür als `RaumGeometrieSchema` an genau einer Stelle im Raummodul und gelten für Raumvorlage und eingefrorenen Plan gleichermaßen, statt im Sitzplan als schwächerer Parallelvertrag dupliziert zu werden, framework-freier `SitzplanService` und Repository-Port — Existenz, Eigentümerschaft und Soft-Delete-Zustand beider Quellen werden an `KlassenService` und `RaumService` delegiert statt dupliziert, Route Handler `GET`/`POST /api/sitzplaene` und `GET`/`PATCH`/`DELETE /api/sitzplaene/[id]` (Soft-Delete) sowie UI `/sitzplaene`, `/sitzplaene/neu` mit Auswahl der eigenen Klasse und Raumvorlage und Editor-Shell `/sitzplaene/[id]` mit Umbenennen und Löschen; `revision` startet bei `1` und wird in diesem Slice bewusst nicht fortgeschrieben (Autosave folgt, ADR-0004); PostgreSQL-Integrationstest (`tests/sitzplan/sitzplan-postgres.integration.test.ts`, opt-in via `TEST_DATABASE_URL`) weist die Snapshot-Isolation nach: eine nach der Plananlage geänderte Raumvorlage verändert den Plan nicht rückwirkend
 
+### Changed
+
+- Next.js innerhalb der LTS-Range `~16.2.11` auf 16.2.12 aufgelöst; nur `bun.lock` geändert, die deklarierte Range bleibt unverändert (#39)
+- drizzle-kit von 0.30 auf 0.31 angehoben (#143)
+
+### Fixed
+
+- drizzle-Snapshot-Kette repariert und Constraint-Namen zwischen Schema und Datenbank angeglichen: Migration `0007_constraint_namen_angleichen.sql` löst die Zielnamen vorher auf und ist damit auch auf bereits angeglichenen Datenbanken idempotent; ein Journal-Test sichert lückenlose, aufsteigende Snapshot-Einträge und erkennt veraltete Snapshots über die Drift-Prüfung (#148)
+
 ## M2 — Raumeditor — 30.07.2026
 
 **Betroffene Bereiche:** Raumvorlagen mit versioniertem JSONB-Dokument, Konva-Editorfläche, Standardobjekte und Möbelpalette, Objektinteraktion mit Rasterfang, Objektaktionen, adressierbare Sitzplätze, M2-Akzeptanz.

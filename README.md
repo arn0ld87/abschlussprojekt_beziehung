@@ -2,25 +2,17 @@
 
 Grafische, selbst gehostete Single-User-PWA zum Erstellen, dauerhaften Speichern, Wiederherstellen und KI-gestützten Optimieren von Sitzordnungen.
 
-> **Projektstatus: M1 — Klassen (M0 — Foundation abgeschlossen).** Der aktuelle Stand ist ein Entwicklungsprototyp für Test- und Fantasiedaten. Nicht mit echten Schuldaten verwenden.
+> **Projektstatus: M3 — Persistente Pläne (M0 — Foundation, M1 — Klassen und M2 — Raumeditor abgeschlossen).** Der aktuelle Stand ist ein Entwicklungsprototyp für Test- und Fantasiedaten. Nicht mit echten Schuldaten verwenden.
 
 [![Repository](https://img.shields.io/badge/GitHub-arn0ld87%2Fabschlussprojekt--beziehung-111?style=flat-square&logo=github)](https://github.com/arn0ld87/abschlussprojekt_beziehung)
-[![Phase](https://img.shields.io/badge/Phase-M1%20Klassen-0E8A16?style=flat-square)](./docs/STATUS.md)
+[![Phase](https://img.shields.io/badge/Phase-M3%20Persistente%20Pl%C3%A4ne-0E8A16?style=flat-square)](./docs/STATUS.md)
 
 ## App starten
 
-Die Next.js-Scaffold läuft seit M0-Slice
-[#18](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/18), die
-Anwendungs-CI seit
-[#19](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/19).
-[#27 Foundation-Baseline](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/27)
-synchronisiert die Doku, hebt Next.js auf die 16-LTS und aktiviert die
-Lint-, Typecheck-, Test- und Build-Gates. Die Docker-Laufzeit und der
-Healthcheck-Endpunkt entstehen mit
-[#20](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/20).
-[#31 Runtime-Baseline](https://github.com/arn0ld87/abschlussprojekt_beziehung/issues/31)
-hebt die Laufzeit auf Node 24 LTS, macht Next.js patch-fähig (`~16.2.11`) und
-aktiviert Dependabot für wöchentliche, gruppierte Dependency-Updates.
+Die Anwendung läuft auf Next.js 16 LTS mit App Router, Node 24 LTS und
+PostgreSQL; Dependabot hält Dependencies wöchentlich und gruppiert aktuell.
+Welche Slices dahinterstehen und was davon verifiziert ist, steht in
+[`docs/STATUS.md`](docs/STATUS.md).
 
 ### Voraussetzungen
 
@@ -61,7 +53,7 @@ docker compose down -v
 ### Worktrees
 
 Pro Issue-Lauf wird ein eigener Git-Worktree unter
-`<worktree-basisverzeichnis>/abschlussprojekt_beziehung.worktrees/m0-<nr>-<name>`
+`<worktree-basisverzeichnis>/abschlussprojekt_beziehung.worktrees/m<milestone>-<nr>-<name>`
 angelegt. Der Hauptklon bleibt unangetastet. Konvention und Workflow sind in
 [`docs/runbooks/next-task.md`](docs/runbooks/next-task.md) dokumentiert.
 
@@ -79,7 +71,7 @@ Next.js mit App Router und TypeScript, React-Konva, PostgreSQL mit Drizzle ORM, 
 
 ## Entwicklungsstatus
 
-Der verifizierte Istzustand steht in `docs/STATUS.md`. Produktcode ist noch nicht begonnen; der aktuelle Freigabepunkt ist M1.
+Der verifizierte Istzustand steht in `docs/STATUS.md`. M0 bis M2 sind abgeschlossen; die aktuelle Frontier ist M3 — Persistente Pläne.
 
 ## Dokumentationshierarchie
 
