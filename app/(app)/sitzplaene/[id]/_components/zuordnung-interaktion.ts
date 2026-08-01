@@ -61,10 +61,12 @@ export function waehleAusAblage(zustand: InteraktionsZustand, schuelerId: string
  *
  * Genau die vier vom Issue spezifizierten Richtungen sind erlaubt. „Ablage →
  * belegter Sitzplatz" gehört nicht dazu und wird deshalb **abgelehnt** statt
- * den bisherigen Platzinhaber still in die Ablage zu verdrängen: Undo ist in
- * diesem Slice nicht verfügbar, und eine Verdrängung, die nur sehende Nutzer
- * bemerken, ist kein akzeptabler stiller Datenverlust. Das löst zugleich die
- * Zusicherung im Kommentar von `setzeSchueler` ein.
+ * den bisherigen Platzinhaber still in die Ablage zu verdrängen: Eine
+ * Verdrängung, die nur sehende Nutzer bemerken, ist kein akzeptabler stiller
+ * Datenverlust. Dieses Argument trägt unabhängig von Undo — die Ablehnung
+ * bleibt deshalb auch bestehen, seit die Editor-Historie (M3 #58) Rückgängig
+ * anbietet. Sie löst zugleich die Zusicherung im Kommentar von `setzeSchueler`
+ * ein.
  */
 export function aktiviereSitzplatz(zustand: InteraktionsZustand, sitzplatzId: string): Interaktion {
   const inhaber = belegtVon(zustand, sitzplatzId);

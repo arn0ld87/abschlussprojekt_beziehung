@@ -6,12 +6,15 @@ import { erzeugeSitzplaetze } from '../../src/domain/raum/sitzplaetze';
 import type { RaumObjektV1 } from '../../src/domain/raum/objekte';
 import {
   AENDERUNGS_ZUSTAND_TEXT,
+  beschreibeZiel,
   ermittlePlattform,
   ermittleTastaturBefehl,
   ermittleZuordnungsZustand,
   istTexteingabe,
   macheRueckgaengig,
+  pruefePlanwechsel,
   stelleWiederHer,
+  tastaturkuerzel,
   type Plattform,
   type TastaturEreignis,
 } from '../../app/(app)/sitzplaene/[id]/_components/historie-bedienung';
@@ -263,6 +266,106 @@ describe('Historien-Bedienlogik (M3 #58)', () => {
       expect(istTexteingabe({ tagName: 'textarea' })).toBe(true);
       expect(istTexteingabe({ tagName: 'input', typ: 'CHECKBOX' })).toBe(false);
       expect(istTexteingabe(null)).toBe(false);
+    });
+  });
+
+  describe('Abbildung des Ereignisziels', () => {
+    // An dieser Abbildung würde die Namensfeld-Ausnahme praktisch scheitern:
+    // Liest sie den Eingabetyp nicht aus, gilt das Namensfeld nicht mehr als
+    // Texteingabe und das Kürzel griffe dort.
+    it('übernimmt Tagname, Eingabetyp und Editierbarkeit aus dem Ereignisziel', () => {
+      const namensfeld = { tagName: 'INPUT', type: 'text', isContentEditable: false };
+      expect(beschreibeZiel(namensfeld)).toEqual({ tagName: 'INPUT', typ: 'text', istEditierbar: false });
+
+      const reichtext = { tagName: 'DIV', isContentEditable: true };
+      expect(beschreibeZiel(reichtext)).toEqual({ tagName: 'DIV', typ: null, istEditierbar: true });
+    });
+
+    it('ergibt für Ziele ohne Elementnatur kein Ziel, statt zu scheitern', () => {
+      // `event.target` kann auch `document` oder `window` sein.
+      expect(beschreibeZiel(null)).toBeNull();
+      expect(beschreibeZiel(undefined)).toBeNull();
+      expect(beschreibeZiel({})).toBeNull();
+      expect(beschreibeZiel({ tagName: 42 })).toBeNull();
+    });
+
+    it('führt vom Namensfeld bis zur Entscheidung durchgehend zur Ablehnung', () => {
+      const ausNamensfeld = taste({
+        ctrlKey: true,
+        ziel: beschreibeZiel({ tagName: 'INPUT', type: 'text', isContentEditable: false }),
+      });
+      expect(ermittleTastaturBefehl(ausNamensfeld, 'sonstige')).toBeNull();
+
+      const ausSitzplatzKnopf = taste({
+        ctrlKey: true,
+        // `<button>` trägt ebenfalls ein `type`-Attribut („submit"); es darf
+        // die Schaltfläche nicht zur Texteingabe machen.
+        ziel: beschreibeZiel({ tagName: 'BUTTON', type: 'submit', isContentEditable: false }),
+      });
+      expect(ermittleTastaturBefehl(ausSitzplatzKnopf, 'sonstige')).toBe('rueckgaengig');
+    });
+  });
+
+  describe('Angesagte Tastaturkürzel', () => {
+    it('sagt je Plattform nur die Kürzel an, die dort auch greifen', () => {
+      for (const plattform of ['mac', 'sonstige'] as Plattform[]) {
+        const kuerzel = tastaturkuerzel(plattform);
+        for (const wert of [kuerzel.rueckgaengig, kuerzel.wiederherstellen]) {
+          for (const einzeln of wert.split(' ')) {
+            const teile = einzeln.split('+');
+            const ereignis = taste({
+              key: teile[teile.length - 1],
+              metaKey: teile.includes('Meta'),
+              ctrlKey: teile.includes('Control'),
+              shiftKey: teile.includes('Shift'),
+            });
+            // Jedes angesagte Kürzel löst auf dieser Plattform tatsächlich aus.
+            expect(ermittleTastaturBefehl(ereignis, plattform), `${plattform}: ${einzeln}`).not.toBeNull();
+          }
+        }
+      }
+    });
+
+    it('sagt den jeweils plattformfremden Modifikator nicht an', () => {
+      expect(tastaturkuerzel('mac').rueckgaengig).not.toContain('Control');
+      expect(tastaturkuerzel('sonstige').rueckgaengig).not.toContain('Meta');
+      expect(tastaturkuerzel('sonstige').wiederherstellen).not.toContain('Meta');
+    });
+  });
+
+  describe('Planwechsel', () => {
+    const mitStapeln = (): Historie<Zuordnung[]> => {
+      let h = erzeugeHistorie<Zuordnung[]>([]);
+      h = wendeAn(h, [{ sitzplatzId: platzA, schuelerId: ANNA }]);
+      h = wendeAn(h, [{ sitzplatzId: platzB, schuelerId: BRUNO }]);
+      return h;
+    };
+
+    it('lässt die Historie unangetastet, solange derselbe Plan angezeigt wird', () => {
+      const historie = mitStapeln();
+      expect(pruefePlanwechsel(historie, 'plan_a', 'plan_a', historie.gegenwart)).toEqual({
+        art: 'unveraendert',
+      });
+    });
+
+    it('verwirft beim Wechsel auf einen anderen Plan beide Stapel und übernimmt dessen Zuordnungen', () => {
+      const historie = mitStapeln();
+      const geladen: Zuordnung[] = [{ sitzplatzId: platzC, schuelerId: ANNA }];
+
+      const wechsel = pruefePlanwechsel(historie, 'plan_a', 'plan_b', geladen);
+      expect(wechsel.art).toBe('zuruecksetzen');
+      if (wechsel.art !== 'zuruecksetzen') return;
+
+      expect(wechsel.historie.vergangenheit).toEqual([]);
+      expect(wechsel.historie.zukunft).toEqual([]);
+      expect(wechsel.historie.gegenwart).toEqual(geladen);
+      expect(wechsel.historie.bestaetigt).toEqual(geladen);
+      // Undo darf nicht über einen Planwechsel hinweg in ein fremdes Dokument führen.
+      expect(macheRueckgaengig(wechsel.historie).art).toBe('abgelehnt');
+      // Der Wechsel gilt als gespeichert, nicht als offene Änderung.
+      expect(ermittleZuordnungsZustand(wechsel.historie, { speichert: false, fehler: false })).toBe(
+        'gespeichert',
+      );
     });
   });
 });

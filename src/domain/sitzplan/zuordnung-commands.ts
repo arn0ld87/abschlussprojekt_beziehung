@@ -29,7 +29,10 @@ export function sortiereZuordnungen(zuordnungen: readonly Zuordnung[]): Zuordnun
  * (Invariante 3). War der Zielplatz von einem anderen Schüler belegt, kehrt
  * dieser in die Ablage zurück (Invariante 2) — die Bedienoberfläche bietet
  * diesen Weg nur für freie Plätze an und leitet den belegten Fall bewusst auf
- * {@link tausche}, damit niemand versehentlich verdrängt wird.
+ * {@link tausche}, damit niemand versehentlich verdrängt wird. Diese Führung
+ * gilt dauerhaft und unabhängig davon, ob der Editor Undo anbietet: Eine
+ * Verdrängung, die nur sehende Nutzer bemerken, ist kein zulässiger stiller
+ * Datenverlust.
  */
 export function setzeSchueler(
   zuordnungen: readonly Zuordnung[],
