@@ -14,8 +14,8 @@
 
 ## Architekturkarte
 
-- [`docs/product.md`](docs/product.md) ist die verbindliche Produkt- und Architekturquelle; das Repository befindet sich noch in der Design-/Bootstrap-Phase.
-- Zielstack: Next.js App Router, TypeScript Strict, React/React-Konva, PostgreSQL, Drizzle, Zod, Better Auth, Vercel AI SDK, IndexedDB und Docker Compose.
+- [`docs/product.md`](docs/product.md) ist die verbindliche Produkt- und Architekturquelle; M0 bis M2 sind abgeschlossen, M3 — Persistente Pläne ist die aktuelle Frontier. Verifizierter Istzustand: [`docs/STATUS.md`](docs/STATUS.md).
+- Umgesetzter Stack: Next.js App Router (16 LTS), TypeScript Strict, React/React-Konva, PostgreSQL, Drizzle, Zod, Better Auth und Docker Compose. Noch offen: Vercel AI SDK und IndexedDB.
 - Reine Domänenlogik und Verträge bleiben unabhängig von Framework, Canvas, Datenbank und KI-SDK. Route Handler delegieren an framework-unabhängige Services.
 - Fachmodule: Klassenbuch, Raumplaner, Sitzplan-Editor, Persistenz, Regelwerk, Optimierer, KI-Assistent, Export, Provider und Betrieb.
 
