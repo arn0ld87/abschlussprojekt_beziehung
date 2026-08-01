@@ -101,9 +101,12 @@ describe('Schülerzuordnung — Bedienvertrag (M3 #57)', () => {
     it('nennt die zugängliche Alternative zum Ziehen ausdrücklich', () => {
       expect(html).toMatch(/Auswählen/i);
       expect(html).toMatch(/Tastatur/i);
+      // Die Einschränkung „Ablage nur auf freie Plätze" steht sichtbar dort,
+      // wo sie gilt — nicht erst in der Ablehnungsmeldung.
+      expect(html).toMatch(/nur auf\s*einen freien Platz/i);
     });
 
-    it('zeigt Inkonsistenzbefunde als Warnung, ohne die Bedienung zu blockieren', () => {
+    it('zeigt Inkonsistenzbefunde höflich an, ohne die Bedienung zu blockieren', () => {
       const mitBefund = renderToStaticMarkup(
         React.createElement(SitzplanZuordnung, {
           ...props,
@@ -117,19 +120,38 @@ describe('Schülerzuordnung — Bedienvertrag (M3 #57)', () => {
           ],
         }),
       );
-      expect(mitBefund).toContain('role="alert"');
+      // `role="status"` statt `role="alert"`: Die Befunde stehen bereits beim
+      // Laden im Markup und sind keine dynamisch auftretende Warnung. Die
+      // Listensemantik der Einträge bleibt dabei erhalten.
+      expect(mitBefund).toContain('role="status"');
+      expect(mitBefund).toContain('aria-label="Inkonsistenzen in diesem Sitzplan"');
+      expect(mitBefund).not.toContain('<ul role="alert"');
       expect(mitBefund).toContain('nicht mehr aktiv');
       // Die Ablage bleibt bedienbar.
       expect(mitBefund).toContain('aria-label="Ablage: Schüler ohne Sitzplatz"');
     });
   });
 
-  describe('Quell-Vertrag der Interaktion', () => {
-    it('nutzt ausschließlich die framework-freien Domänen-Commands', () => {
-      expect(quelle).toContain("from '../../../../../src/domain/sitzplan/zuordnung-commands'");
-      expect(quelle).toContain('setzeSchueler');
-      expect(quelle).toContain('tausche');
-      expect(quelle).toContain('entferne');
+  // Das *Verhalten* der Bedienung — welche Handlung was bewirkt, was abgelehnt
+  // wird und was angesagt wird — ist vollständig in
+  // `sitzplan-zuordnung-interaktion.test.ts` geprüft, weil die Entscheidungen
+  // im framework-freien Modul `zuordnung-interaktion.ts` liegen und dort ohne
+  // DOM ausführbar sind. Hier bleiben nur Aussagen über die Verdrahtung, die
+  // ohne DOM nicht ausführbar wären; sie ergänzen die Verhaltenstests und
+  // ersetzen sie nicht.
+  describe('Verdrahtung der Komponente', () => {
+    it('trifft keine eigenen Fachentscheidungen, sondern führt das Interaktionsmodul aus', () => {
+      // Die Commands werden ausschließlich über das Interaktionsmodul erreicht —
+      // eine zweite, abweichende Entscheidungslogik in der Komponente würde die
+      // Verhaltenstests wirkungslos machen.
+      expect(quelle).toContain("from './zuordnung-interaktion'");
+      // Reiner Typ-Import aus dem Command-Modul ist zulässig, ein Wert-Import
+      // nicht: Sonst könnte die Komponente die Commands an der geprüften
+      // Entscheidungslogik vorbei aufrufen.
+      expect(quelle).not.toMatch(/^import \{[^}]*\} from '[^']*zuordnung-commands'/m);
+      expect(quelle).not.toMatch(/\bsetzeSchueler\(/);
+      expect(quelle).not.toMatch(/\btausche\(/);
+      expect(quelle).not.toMatch(/\bentferne\(/);
     });
 
     it('schreibt über den Zuordnungs-Endpunkt und nie direkt in die Datenbank', () => {
@@ -143,22 +165,25 @@ describe('Schülerzuordnung — Bedienvertrag (M3 #57)', () => {
       expect(quelle).toMatch(/setZuordnungen\(vorher\)/);
     });
 
-    it('bietet Drag-and-drop in allen vier Richtungen an', () => {
-      expect(quelle).toContain('draggable');
-      expect(quelle).toContain('onDragStart');
-      expect(quelle).toContain('onDragOver');
-      expect(quelle).toContain('onDrop');
+    it('verliert den Tastaturfokus während des Speicherns nicht', () => {
+      // `disabled` würde den Fokus des gerade betätigten Elements auf <body>
+      // werfen (WCAG 2.4.3). Der Schutz vor Doppelaktionen liegt stattdessen im
+      // Guard von `fuehreAus`.
+      expect(quelle).not.toMatch(/(?<!aria-)disabled=\{speichert\}/);
+      expect(quelle).toContain('aria-disabled={speichert}');
+      expect(quelle).toMatch(/if \(speichert\) return;/);
     });
 
-    it('bietet Auswahl und Aktion als tastaturbedienbare Alternative', () => {
-      // Native Schaltflächen sind per Enter/Leertaste bedienbar (WCAG 2.1.1).
-      expect(quelle).toContain('<button');
-      expect(quelle).toContain('aria-pressed');
-      expect(quelle).toContain(':focus-visible');
+    it('verbindet Drag-and-drop mit denselben Entscheidungen wie die Tastaturbedienung', () => {
+      expect(quelle).toContain('onDragStart');
+      expect(quelle).toContain('onDragOver');
+      expect(quelle).toContain('dropAufSitzplatz(zustand');
+      expect(quelle).toContain('dropAufAblage(zustand');
+      expect(quelle).toContain('aktiviereSitzplatz(zustand');
     });
 
     it('bindet die Canvas-Darstellung ohne SSR ein und persistiert keine Konva-Knoten', () => {
-      expect(quelle).toContain("ssr: false");
+      expect(quelle).toContain('ssr: false');
       expect(quelle).not.toContain('toJSON');
       expect(quelle).not.toContain('Konva.Node');
     });

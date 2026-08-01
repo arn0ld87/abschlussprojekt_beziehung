@@ -22,7 +22,7 @@ Diese Begriffe sind in Code, Schemas, Schnittstellen, Tests und Dokumentation ka
 - Ein Schülerprofil kommt in einem Sitzplan höchstens einmal vor.
 - Ein Sitzplatz trägt höchstens ein Schülerprofil.
 - Jede Zuordnung verweist auf einen existierenden Sitzplatz der eingefrorenen Raumgeometrie des Sitzplans.
-- Nur aktive Schülerprofile der Quellklasse des Sitzplans dürfen zugeordnet werden.
+- Nur aktive Schülerprofile der Quellklasse des Sitzplans dürfen zugeordnet werden; bereits im Dokument stehende Einträge bleiben bis zum Zurücklegen zulässig.
 - Die Ablage wird nie gespeichert; sie ist die Differenz aus aktiven Schülerprofilen und Zuordnungen.
 - Harte Sitzregeln werden nie verletzt.
 - Das Wiederherstellen einer Planversion erzeugt eine neue Revision und verändert die Planversion nicht.

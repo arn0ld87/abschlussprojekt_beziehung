@@ -50,6 +50,17 @@ export const SITZPLAN_ZUORDNUNG_INVARIANTEN: ReadonlyArray<{
     pruefe: (zuordnungen) => new Set(zuordnungen.map((z) => z.schuelerId)).size === zuordnungen.length,
     message: 'Ein Schüler darf höchstens auf einem Sitzplatz sitzen.',
   },
+  {
+    // Deterministische Serialisierung als Vertragsinvariante, nicht als bloße
+    // Zusicherung eines einzelnen Schreibpfads: Sobald Autosave und
+    // Planversionen (M3 #58/#59) weitere Schreiber öffnen, müssen zwei
+    // fachlich gleiche Zuordnungsmengen weiterhin byte-identisch persistieren,
+    // damit Revisions- und Versionsvergleiche nicht an Reihenfolgerauschen
+    // scheitern.
+    pruefe: (zuordnungen) =>
+      zuordnungen.every((z, i) => i === 0 || zuordnungen[i - 1].sitzplatzId <= z.sitzplatzId),
+    message: 'Zuordnungen müssen aufsteigend nach sitzplatzId sortiert sein.',
+  },
 ];
 
 export const SitzplanDokumentV1Schema = z.object({

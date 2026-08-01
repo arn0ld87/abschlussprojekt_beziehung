@@ -5,12 +5,20 @@ import dynamic from 'next/dynamic';
 import type { RaumObjektV1 } from '../../../../../src/domain/raum/objekte';
 import type { SitzplatzV1 } from '../../../../../src/domain/raum/sitzplaetze';
 import type { Zuordnung } from '../../../../../src/domain/sitzplan';
+import type { ZuordnungBefund } from '../../../../../src/domain/sitzplan/zuordnung-commands';
 import {
-  setzeSchueler,
-  tausche,
-  entferne,
-  type ZuordnungBefund,
-} from '../../../../../src/domain/sitzplan/zuordnung-commands';
+  START_MELDUNG,
+  aktiviereSitzplatz,
+  dragNutzlastSchueler,
+  dragNutzlastSitzplatz,
+  dropAufAblage,
+  dropAufSitzplatz,
+  legeZurueck,
+  waehleAusAblage,
+  type Auswahl,
+  type Interaktion,
+  type InteraktionsZustand,
+} from './zuordnung-interaktion';
 
 // react-konva braucht den Browser — bewusst ohne SSR geladen (Ladezustand sichtbar).
 const SitzplanCanvas = dynamic(() => import('./SitzplanCanvas'), {
@@ -55,27 +63,25 @@ export interface SitzplanZuordnungProps {
   befunde: ZuordnungBefund[];
 }
 
-/** Auswahl für die tastaturbedienbare Alternative zum Ziehen. */
-type Auswahl =
-  | { art: 'ablage'; schuelerId: string }
-  | { art: 'sitzplatz'; sitzplatzId: string }
-  | null;
-
-const DRAG_MIME = 'text/plain';
 // Darstellung einer Zuordnung auf ein nicht mehr aktives Schülerprofil: Der
-// Platz ist belegt, aber nicht auflösbar — er darf im Canvas nicht wie ein
-// freier Platz aussehen.
+// Platz ist belegt, aber nicht auflösbar — er darf nicht wie ein freier Platz
+// aussehen.
 const UNBEKANNT_FARBE = '#9ca3af';
 const UNBEKANNT_INITIALEN = '?';
 
 /**
  * Schülerzuordnung im Sitzplan-Editor (M3 #57).
  *
- * Zwei gleichwertige Bedienwege auf denselben framework-freien Commands:
- * Drag-and-drop (Ablage → Platz, Platz → Platz, Platz → belegter Platz als
+ * Zwei gleichwertige Bedienwege auf denselben Entscheidungen: Drag-and-drop
+ * (Ablage → freier Platz, Platz → Platz, Platz → belegter Platz als
  * definierter Tausch, Platz → Ablage) und — als hartes Kriterium, nicht als
  * Zugabe — Auswahl und Aktion über native Schaltflächen, damit der Editor
  * vollständig mit der Tastatur bedienbar bleibt (WCAG 2.1.1).
+ *
+ * Die Komponente ist bewusst eine dünne Schale: Was eine Bedienhandlung
+ * bewirkt, entscheidet das framework-freie Modul `zuordnung-interaktion.ts`
+ * und ist dort ohne DOM testbar. Hier bleiben nur Zustand, Netzwerkaufruf und
+ * Darstellung.
  *
  * Die Ablage ist abgeleitet, nicht gespeichert: „in der Ablage" heißt „aktiver
  * Schüler ohne Eintrag in den Zuordnungen". Persistiert wird ausschließlich
@@ -91,7 +97,7 @@ export default function SitzplanZuordnung({
 }: SitzplanZuordnungProps) {
   const [zuordnungen, setZuordnungen] = useState<Zuordnung[]>(initialeZuordnungen);
   const [auswahl, setAuswahl] = useState<Auswahl>(null);
-  const [meldung, setMeldung] = useState('Kein Schüler und kein Sitzplatz ausgewählt.');
+  const [meldung, setMeldung] = useState(START_MELDUNG);
   const [fehler, setFehler] = useState('');
   const [speichert, setSpeichert] = useState(false);
 
@@ -100,8 +106,12 @@ export default function SitzplanZuordnung({
   const sitzend = new Set(zuordnungen.map((z) => z.schuelerId));
   const ablage = schueler.filter((s) => !sitzend.has(s.id));
 
-  const nameVon = (schuelerId: string) => schuelerNach.get(schuelerId)?.name ?? 'nicht mehr aktives Schülerprofil';
-  const platzName = (sitz: SitzplatzV1) => sitz.bezeichnung ?? sitz.id;
+  const zustand: InteraktionsZustand = {
+    zuordnungen,
+    auswahl,
+    schuelerNamen: new Map(schueler.map((s) => [s.id, s.name])),
+    platzNamen: new Map(geometrie.sitzplaetze.map((s) => [s.id, s.bezeichnung ?? s.id])),
+  };
 
   /**
    * Schreibt den vollständigen gewünschten Zustand. Schlägt das Speichern
@@ -109,7 +119,6 @@ export default function SitzplanZuordnung({
    * Oberfläche zeigt dann nie eine Zuordnung, die der Server nicht kennt.
    */
   const speichere = async (neu: Zuordnung[], erfolgsmeldung: string) => {
-    if (speichert) return;
     const vorher = zuordnungen;
 
     setZuordnungen(neu);
@@ -143,61 +152,23 @@ export default function SitzplanZuordnung({
     }
   };
 
-  /** Ein Schüler aus der Ablage wird ausgewählt oder abgewählt. */
-  const waehleAusAblage = (schuelerId: string) => {
-    if (auswahl?.art === 'ablage' && auswahl.schuelerId === schuelerId) {
-      setAuswahl(null);
-      setMeldung('Auswahl aufgehoben.');
+  /**
+   * Führt aus, was das Interaktionsmodul entschieden hat. Während eines
+   * laufenden Schreibvorgangs bleibt jede Bedienhandlung folgenlos — die
+   * Schaltflächen tragen dafür `aria-disabled` statt `disabled`, damit der
+   * Fokus beim Speichern nicht auf `<body>` zurückfällt (WCAG 2.4.3).
+   */
+  const fuehreAus = (interaktion: Interaktion) => {
+    if (speichert) return;
+
+    if (interaktion.art === 'speichern') {
+      void speichere(interaktion.zuordnungen, interaktion.meldung);
       return;
     }
-    setAuswahl({ art: 'ablage', schuelerId });
-    setMeldung(`${nameVon(schuelerId)} ausgewählt. Jetzt einen Sitzplatz aktivieren.`);
-  };
-
-  /** Zentrale Aktion auf einen Sitzplatz — identisch für Klick, Tastatur und Drop. */
-  const aktiviereSitzplatz = (sitz: SitzplatzV1) => {
-    const belegtVon = belegtNach.get(sitz.id);
-
-    if (auswahl?.art === 'ablage') {
-      void speichere(
-        setzeSchueler(zuordnungen, { schuelerId: auswahl.schuelerId, sitzplatzId: sitz.id }),
-        `${nameVon(auswahl.schuelerId)} sitzt jetzt auf ${platzName(sitz)}.`,
-      );
-      return;
+    if (interaktion.art === 'auswahl') {
+      setAuswahl(interaktion.auswahl);
     }
-
-    if (auswahl?.art === 'sitzplatz') {
-      if (auswahl.sitzplatzId === sitz.id) {
-        setAuswahl(null);
-        setMeldung('Auswahl aufgehoben.');
-        return;
-      }
-      void speichere(
-        tausche(zuordnungen, auswahl.sitzplatzId, sitz.id),
-        belegtVon ? `Plätze getauscht mit ${platzName(sitz)}.` : `Auf ${platzName(sitz)} verschoben.`,
-      );
-      return;
-    }
-
-    if (!belegtVon) {
-      setMeldung(`${platzName(sitz)} ist frei. Erst einen Schüler in der Ablage auswählen.`);
-      return;
-    }
-
-    setAuswahl({ art: 'sitzplatz', sitzplatzId: sitz.id });
-    setMeldung(`${nameVon(belegtVon)} auf ${platzName(sitz)} ausgewählt. Jetzt Zielplatz oder Ablage aktivieren.`);
-  };
-
-  /** Zurücklegen in die Ablage — Ziel eines Drops und eigene Schaltfläche. */
-  const legeZurueck = (schuelerId: string) => {
-    void speichere(entferne(zuordnungen, schuelerId), `${nameVon(schuelerId)} liegt wieder in der Ablage.`);
-  };
-
-  // Drag-and-drop: Die Nutzlast beschreibt die Quelle; ausgewertet wird sie
-  // über exakt dieselben Commands wie der Tastaturweg.
-  const dragStart = (e: React.DragEvent, nutzlast: string) => {
-    e.dataTransfer.setData(DRAG_MIME, nutzlast);
-    e.dataTransfer.effectAllowed = 'move';
+    setMeldung(interaktion.meldung);
   };
 
   const erlaubeDrop = (e: React.DragEvent) => {
@@ -205,36 +176,13 @@ export default function SitzplanZuordnung({
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const dropAufSitzplatz = (e: React.DragEvent, sitz: SitzplatzV1) => {
-    e.preventDefault();
-    const nutzlast = e.dataTransfer.getData(DRAG_MIME);
-    if (nutzlast.startsWith('schueler:')) {
-      const schuelerId = nutzlast.slice('schueler:'.length);
-      void speichere(
-        setzeSchueler(zuordnungen, { schuelerId, sitzplatzId: sitz.id }),
-        `${nameVon(schuelerId)} sitzt jetzt auf ${platzName(sitz)}.`,
-      );
-      return;
-    }
-    if (nutzlast.startsWith('sitzplatz:')) {
-      const quelle = nutzlast.slice('sitzplatz:'.length);
-      if (quelle === sitz.id) return;
-      void speichere(
-        tausche(zuordnungen, quelle, sitz.id),
-        belegtNach.get(sitz.id) ? `Plätze getauscht mit ${platzName(sitz)}.` : `Auf ${platzName(sitz)} verschoben.`,
-      );
-    }
-  };
-
-  const dropAufAblage = (e: React.DragEvent) => {
-    e.preventDefault();
-    const nutzlast = e.dataTransfer.getData(DRAG_MIME);
-    if (!nutzlast.startsWith('sitzplatz:')) return;
-    const schuelerId = belegtNach.get(nutzlast.slice('sitzplatz:'.length));
-    if (schuelerId) legeZurueck(schuelerId);
+  const starteDrag = (e: React.DragEvent, nutzlast: string) => {
+    e.dataTransfer.setData('text/plain', nutzlast);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const ausgewaehlterSitzplatzId = auswahl?.art === 'sitzplatz' ? auswahl.sitzplatzId : null;
+  const ausgewaehlterInhaber = ausgewaehlterSitzplatzId ? belegtNach.get(ausgewaehlterSitzplatzId) : undefined;
 
   return (
     <section aria-label="Schülerzuordnung">
@@ -242,31 +190,38 @@ export default function SitzplanZuordnung({
       <style>{`
         .sitzplan-ziel:focus-visible { outline: 3px solid #dc2626; outline-offset: 2px; }
         .sitzplan-ziel { cursor: pointer; }
-        .sitzplan-ziel[disabled] { cursor: not-allowed; opacity: 0.55; }
+        .sitzplan-ziel[aria-disabled="true"] { cursor: progress; opacity: 0.55; }
       `}</style>
 
       <h3>Schülerzuordnung</h3>
 
+      {/* Befunde stehen bereits beim Laden im Markup und sind keine
+          dynamische Warnung — `role="status"` meldet sie höflich an, ohne die
+          Listensemantik der Einträge zu überschreiben. */}
       {befunde.length > 0 && (
-        <ul role="alert" style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem 0' }}>
-          {befunde.map((b) => (
-            <li
-              key={`${b.sitzplatzId}-${b.schuelerId}`}
-              style={{
-                padding: '0.5rem 0.75rem',
-                border: '1px solid #b45309',
-                background: '#fffbeb',
-                color: '#7c2d12',
-                borderRadius: '6px',
-                marginBottom: '0.5rem',
-              }}
-            >
-              {b.meldung}
-            </li>
-          ))}
-        </ul>
+        <div role="status" aria-label="Inkonsistenzen in diesem Sitzplan">
+          <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem 0' }}>
+            {befunde.map((b) => (
+              <li
+                key={`${b.sitzplatzId}-${b.schuelerId}`}
+                style={{
+                  padding: '0.5rem 0.75rem',
+                  border: '1px solid #b45309',
+                  background: '#fffbeb',
+                  color: '#7c2d12',
+                  borderRadius: '6px',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                {b.meldung}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
+      {/* Der Speicherfehler tritt dagegen dynamisch auf und rechtfertigt die
+          assertive Rolle. */}
       {fehler && (
         <p role="alert" style={{ color: '#b91c1c' }}>
           {fehler}
@@ -280,8 +235,9 @@ export default function SitzplanZuordnung({
       <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
         Bedienung mit der Maus durch Ziehen und Ablegen. Ohne Maus vollständig mit der Tastatur:
         Schüler oder belegten Sitzplatz <strong>auswählen</strong>, dann den Zielplatz aktivieren —
-        ein belegter Zielplatz führt den Tausch aus. &bdquo;Zurück in die Ablage&ldquo; legt den
-        ausgewählten Schüler wieder ab.
+        ein belegter Zielplatz führt den Tausch aus. Ein Schüler aus der Ablage lässt sich nur auf
+        einen freien Platz setzen. &bdquo;Zurück in die Ablage&ldquo; legt den ausgewählten Schüler
+        wieder ab.
       </p>
 
       <SitzplanCanvas
@@ -299,10 +255,7 @@ export default function SitzplanZuordnung({
           };
         })}
         ausgewaehlterSitzplatzId={ausgewaehlterSitzplatzId}
-        onSitzplatzKlick={(id) => {
-          const sitz = geometrie.sitzplaetze.find((s) => s.id === id);
-          if (sitz) aktiviereSitzplatz(sitz);
-        }}
+        onSitzplatzKlick={(id) => fuehreAus(aktiviereSitzplatz(zustand, id))}
       />
 
       <h4>Sitzplätze</h4>
@@ -311,31 +264,35 @@ export default function SitzplanZuordnung({
         style={{ listStyle: 'none', padding: 0, display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}
       >
         {geometrie.sitzplaetze.map((sitz) => {
-          const belegtVon = belegtNach.get(sitz.id);
-          const person = belegtVon ? schuelerNach.get(belegtVon) : undefined;
+          const inhaber = belegtNach.get(sitz.id);
+          const person = inhaber ? schuelerNach.get(inhaber) : undefined;
           const ausgewaehlt = ausgewaehlterSitzplatzId === sitz.id;
-          const beschriftung = belegtVon
-            ? `${platzName(sitz)}: ${nameVon(belegtVon)}`
-            : `${platzName(sitz)}: frei`;
+          const platz = sitz.bezeichnung ?? sitz.id;
+          const beschriftung = inhaber
+            ? `${platz}: ${person?.name ?? 'nicht mehr aktives Schülerprofil'}`
+            : `${platz}: frei`;
           return (
             <li key={sitz.id}>
               <button
                 type="button"
                 className="sitzplan-ziel"
-                disabled={speichert}
+                aria-disabled={speichert}
                 aria-pressed={ausgewaehlt}
                 aria-label={beschriftung}
-                draggable={belegtVon !== undefined && !speichert}
-                onDragStart={(e) => dragStart(e, `sitzplatz:${sitz.id}`)}
+                draggable={inhaber !== undefined && !speichert}
+                onDragStart={(e) => starteDrag(e, dragNutzlastSitzplatz(sitz.id))}
                 onDragOver={erlaubeDrop}
-                onDrop={(e) => dropAufSitzplatz(e, sitz)}
-                onClick={() => aktiviereSitzplatz(sitz)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  fuehreAus(dropAufSitzplatz(zustand, e.dataTransfer.getData('text/plain'), sitz.id));
+                }}
+                onClick={() => fuehreAus(aktiviereSitzplatz(zustand, sitz.id))}
                 style={{
                   padding: '0.5rem 0.75rem',
                   borderRadius: '9999px',
                   border: ausgewaehlt ? '2px solid #dc2626' : '1px solid #7c2d12',
-                  background: belegtVon ? (person?.farbe ?? UNBEKANNT_FARBE) : '#ffffff',
-                  color: belegtVon ? '#ffffff' : '#7c2d12',
+                  background: inhaber ? (person?.farbe ?? UNBEKANNT_FARBE) : '#ffffff',
+                  color: inhaber ? '#ffffff' : '#7c2d12',
                   fontSize: '0.875rem',
                 }}
               >
@@ -347,7 +304,13 @@ export default function SitzplanZuordnung({
       </ul>
 
       <h4>Ablage</h4>
-      <div onDragOver={erlaubeDrop} onDrop={dropAufAblage}>
+      <div
+        onDragOver={erlaubeDrop}
+        onDrop={(e) => {
+          e.preventDefault();
+          fuehreAus(dropAufAblage(zustand, e.dataTransfer.getData('text/plain')));
+        }}
+      >
         <ul
           aria-label="Ablage: Schüler ohne Sitzplatz"
           style={{
@@ -371,12 +334,12 @@ export default function SitzplanZuordnung({
                 <button
                   type="button"
                   className="sitzplan-ziel"
-                  disabled={speichert}
+                  aria-disabled={speichert}
                   aria-pressed={ausgewaehlt}
-                  aria-label={`${s.name} auswählen und auf einen Sitzplatz setzen`}
+                  aria-label={`${s.name} auswählen und auf einen freien Sitzplatz setzen`}
                   draggable={!speichert}
-                  onDragStart={(e) => dragStart(e, `schueler:${s.id}`)}
-                  onClick={() => waehleAusAblage(s.id)}
+                  onDragStart={(e) => starteDrag(e, dragNutzlastSchueler(s.id))}
+                  onClick={() => fuehreAus(waehleAusAblage(zustand, s.id))}
                   style={{
                     padding: '0.5rem 0.75rem',
                     borderRadius: '9999px',
@@ -394,12 +357,12 @@ export default function SitzplanZuordnung({
         </ul>
       </div>
 
-      {ausgewaehlterSitzplatzId && belegtNach.get(ausgewaehlterSitzplatzId) && (
+      {ausgewaehlterSitzplatzId && ausgewaehlterInhaber && (
         <button
           type="button"
           className="sitzplan-ziel"
-          disabled={speichert}
-          onClick={() => legeZurueck(belegtNach.get(ausgewaehlterSitzplatzId)!)}
+          aria-disabled={speichert}
+          onClick={() => fuehreAus(legeZurueck(zustand, ausgewaehlterSitzplatzId))}
           style={{
             marginTop: '0.75rem',
             padding: '0.5rem 0.75rem',
