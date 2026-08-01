@@ -39,6 +39,8 @@ Lies vor jeder Änderung am Repository in dieser Reihenfolge:
 
 - Führe immer `git diff --check` aus. Dokumentations-Gate: `bash scripts/check-docs.sh`.
 - Anwendungs-Gates (`bun run lint`, `bun run typecheck`, `bun run test`, `bun run build`) sind seit M0 #27 vorhanden und bei jedem Slice grün zu halten. E2E-Gates sind M7 vorbehalten.
+- Nutze `code-review-graph` vor Exploration und Änderung und aktualisiere den Graphen danach.
+- Schließe jede Änderung mit einem lokalen CodeRabbit-Lauf (`cr review --type uncommitted`) ab. Er ist zusätzliche Evidenz und ersetzt weder Tests noch das unabhängige Review.
 
 ## Detail-Dokumente (bei Bedarf laden)
 
