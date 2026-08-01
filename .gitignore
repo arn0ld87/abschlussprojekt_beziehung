@@ -10,6 +10,15 @@
 # Superpowers (Plugin-Cache, regenerierbar)
 .superpowers/
 
+# OpenCode (lokaler Werkzeugzustand, regenerierbar)
+.opencode/
+
+# Agenten-Backups (lokale Sicherungskopien der Rollendefinitionen)
+.agents/backups/
+
+# Lokales Werkzeug-Setup (arbeitsplatzspezifisch)
+setup-antigravity.sh
+
 # Node / Next.js (lokal, regenerierbar)
 node_modules/
 .next/
